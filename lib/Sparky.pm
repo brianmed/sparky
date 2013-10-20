@@ -118,7 +118,7 @@ sub container_valid {
         my $ipath = (stat($path))[1];
         my $icontainer = (stat($container))[1];
 
-        if ($ipath == $icontainer) {
+        if ($path eq $container) {
             return 1;
         }
         else {
@@ -129,14 +129,12 @@ sub container_valid {
         return 0;
     }
 
-    my $icontainer = (stat($container))[1];
-    
+    # Container is a directory; path can be either
     foreach (1 .. 15) {
-        # $self->app->log->debug("path: $path");
-        # $self->app->log->debug("container: $container");
+        $self->app->log->debug("path: $path");
+        $self->app->log->debug("container: $container");
 
-        my $ipath = (stat($path))[1];
-        if ($ipath == $icontainer) {
+        if ($path eq $container) {
             return 1;
         }
         my $dirname = File::Basename::dirname($path);
