@@ -1,0 +1,25 @@
+#!/usr/local/ActivePerl-5.16/bin/perl
+
+use strict;
+use warnings;
+
+BEGIN { unshift @INC, "./lib" }
+
+use File::Basename;
+
+BEGIN {
+    return if $^C;
+
+    push(@ARGV, 'daemon', '-l', 'http://*:8080') unless @ARGV;
+
+    if ($PerlApp::VERSION) {
+        my $dirname = File::Basename::dirname(PerlApp::exe());
+        chdir($dirname) or die("error: chdir: $!\n");
+        $ENV{MOJO_HOME} = $dirname;
+    }
+};
+
+# Start command line interface for application
+require Mojolicious::Commands;
+Mojolicious::Commands->start_app('Sparky');
+

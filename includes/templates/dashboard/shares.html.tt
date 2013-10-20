@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sparky</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="/jqm.css" />
+    <script src="/jquery.js"></script>
+        <script>
+            $(document).bind("mobileinit", function(){
+                  $.mobile.ajaxEnabled = false;
+              });
+        </script>
+    <script src="/jqm.js"></script>
+    <script>
+        var path;
+        function addPath(h, middle) {
+            $(h).attr("href", '/dashboard/shares' + middle + '/' + path);
+
+            setTimeout(function() {
+                $('#options').popup("close");
+            }, 3000);
+        }
+        function delShare() {
+            $.getJSON("/del/share/" + path, function( data ) {
+                if (data.ret) {
+                    $('#options').popup("close");
+
+                    setTimeout(function() {
+                        location.reload(true);
+                    }, 1200);
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+
+<div data-role="page" id=page_show class=ui-responsive-panel>
+
+    <div data-role="header">
+        <a data-ajax=false id=goFetch href="/" data-icon="home">Home</a>
+        <h1><a href="/dashboard/shares" data-rel="external" data-ajax=false>Sparky [Guest]</a></h1>
+    </div><!-- /header -->
+
+    <div data-role="content">
+        [% IF error %]
+            <ul data-role="listview">
+            <li><a data-rel=dialog href="#profile-form">
+                <p class="ui-li-desc" style="white-space: normal;"><font size=+1>[% error | html %]</font></p>
+            </a></li>
+            </ul>
+        [% END %]
+
+        [% UNLESS have_files %]
+            <ul data-role="listview">
+            <li><a data-rel=dialog href="#profile-form">
+                <p class="ui-li-desc" style="white-space: normal;"><font size=+1>No files found.</font></p>
+            </a></li>
+            </ul>
+        [% END %]
+
+        [% IF have_files %]
+            <ul class="info-taphold" data-role="listview" data-filter="true" data-split-icon="gear" data-inset="true" data-split-theme="d">
+                [% IF entry_name %]
+                <li data-role="list-divider">[% entry_name %]</li>
+                [% END %]
+
+                [% FOREACH entry IN entries %]
+                    <li><a data-ajax=false href="/dashboard/shares/[% entry.path %]">
+                    <h2>[% entry.name | html %]</h2>
+                    <p>[% IF "file" == entry.type %] [% entry.size %] [% ELSE %] Directory [% END %]</p></a>
+                        <a href="#options" data-rel="popup" data-position-to="window" data-transition="pop" onclick="path = '[% entry.path %]';">Link</a>
+                    </li>
+                [% END %]
+            </ul>
+
+        <div data-role="popup" id="options" data-theme="a">
+            <ul data-role="listview" data-inset="true" style="min-width: 210px;" data-theme="b">
+                <li data-role="divider" data-theme="a">Options</li>
+                <li data-icon=false><a href="/dashboard/shares/" onclick="addPath(this, '/pls'); return true;">PLS File</a></li>
+                <li data-icon=false><a href="/dashboard/shares/" onclick="addPath(this, '/m3u'); return true;">M3U File</a></li>
+                <li data-icon=false><a href="/dashboard/shares/" onclick="addPath(this, '/audio'); return true;">HTML5 audio</a></li>
+                [% IF c.session.have_user %]
+                <li data-icon=false><a href="#" onclick="delShare(); return false;">Remove</a></li>
+                [% END %]
+                <li data-icon=false><a href="#" data-rel="back">Cancel</a></li>
+            </ul>
+        </div>
+
+        [% END %]
+    </div><!-- /content -->
+</div><!-- /page -->
+
+</body>
+</html>
+

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sparky</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="/jqm.css" />
+    <script src="/jquery.js"></script>
+        <script>
+            $(document).bind("mobileinit", function(){
+                  $.mobile.ajaxEnabled = false;
+            });
+
+            $(document).bind("pageload", function(){
+                $('#pageDialog').click();
+            });
+        </script>
+    <script src="/jqm.js"></script>
+</head>
+<body>
+
+<div data-role="dialog" data-close-btn="none">
+
+    <div data-role="header" data-theme="d">
+        <h1>Sparky</h1>
+    </div>
+
+    <div data-role="content">
+        [% IF error %]
+        <p><span> <a data-inline="true" data-iconpos="notext" data-icon="alert" data-role="button" class="ui-icon-alt ui-btn ui-shadow ui-btn-corner-all ui-btn-inline ui-btn-icon-notext ui-btn-up-e" href="index.html" data-corners="true" data-shadow="true" data-iconshadow="true" data-wrapperels="span" data-theme="e"><span class="ui-btn-inner"><span class="ui-btn-text">Alert</span><span class="ui-icon ui-icon-alert ui-icon-shadow"></span></span></a>
+        </span> [% error %] </p>
+        [% END %]
+
+        [% IF success %]
+        <p><span> <a data-inline="true" data-iconpos="notext" data-icon="check" data-role="button" class="ui-icon-alt ui-btn ui-shadow ui-btn-corner-all ui-btn-inline ui-btn-icon-notext ui-btn-up-e" href="index.html" data-corners="true" data-shadow="true" data-iconshadow="true" data-wrapperels="span" data-theme="e"><span class="ui-btn-inner"><span class="ui-btn-text">Success</span><span class="ui-icon ui-icon-check ui-icon-shadow"></span></span></a>
+        </span> [% success %] </p>
+        [% END %]
+
+        [% IF info || c.flash('info') %]
+        <p><span> <a data-inline="true" data-iconpos="notext" data-icon="info" data-role="button" class="ui-icon-alt ui-btn ui-shadow ui-btn-corner-all ui-btn-inline ui-btn-icon-notext ui-btn-up-e" href="index.html" data-corners="true" data-shadow="true" data-iconshadow="true" data-wrapperels="span" data-theme="e"><span class="ui-btn-inner"><span class="ui-btn-text">Info</span><span class="ui-icon ui-icon-info ui-icon-shadow"></span></span></a>
+        </span> [% info || c.flash('info') %] </p>
+        [% END %]
+
+            <div data-role="popup" id="popupLogin" class="ui-content" data-theme="e" style="max-width:350px;">
+                              <p>Try logging in as <strong>admin</strong></p>
+                              </div>
+
+            <div data-role="popup" id="popupPassword" class="ui-content" data-theme="e" style="max-width:350px;">
+                              <p>You need 8-16 characters with at least one digit and one alphabet character. </p>
+                              </div>
+
+        <form data-ajax=false action="/login" method="post">
+            [% IF c.validation.has_data && c.validation.has_error('login') %]
+                <div class="ui-grid-a">
+                    <div class="ui-block-a" style="width: 8%;"><a href="#popupLogin" data-rel="popup" data-role="button" class="ui-icon-alt" data-inline="true" data-transition="pop" data-icon="info" data-theme="e" data-iconpos="notext">Learn more</a></div>
+                    <div class="ui-block-b" style="width: 92%;"><input name="login" id="login" placeholder="Login" value="[% login | html %]" type="text" autocapitalize="off"></div>
+                </div>
+            [% ELSE %]
+                <div class="ui-grid-solo">
+                    <div class="ui-block-a"><input name="login" id="login" placeholder="Login" value="[% login | html %]" type="text" autocapitalize="off"></div>
+                </div>
+            [% END %]
+
+            [% IF c.validation.has_data && c.validation.has_error('password') %]
+                <div class="ui-grid-a">
+                    <div class="ui-block-a" style="width: 8%;"><a href="#popupPassword" data-rel="popup" data-role="button" class="ui-icon-alt" data-inline="true" data-transition="pop" data-icon="info" data-theme="e" data-iconpos="notext">Learn more</a></div>
+                    <div class="ui-block-b" style="width: 92%;"><input name="password" id="password" placeholder="Password" value="[% password | html %]" autocapitalize="off" type="password"></div>
+                </div>
+            [% ELSE %]
+                <div class="ui-grid-solo">
+                    <div class="ui-block-a"><input name="password" id="password" placeholder="Password" value="[% password | html %]" autocapitalize="off" type="password"></div>
+                </div>
+            [% END %]
+
+            <div class="ui-grid-a">
+                <div class="ui-block-a"><label><input data-mini="true" type="checkbox" name="hour_session" [% IF hour_session %] checked [% END %]/>Quick login</label></div>
+                <div class="ui-block-b"><a href="/dashboard/shares" data-role="button" data-theme="b" rel="dialog" data-mini="true">Public Files</a></div>
+            </div>
+
+            <div class="ui-grid-solo">
+                <div class="ui-block-a"><input value="Login" data-theme="b" type="submit"></div>
+            </div>
+        </form>
+    </div>
+
+    <a id=pageDialog href="/login" data-rel="dialog" style='display:none;'>Login</a>
+</div><!-- /page -->
+
+</body>
+</html>
+

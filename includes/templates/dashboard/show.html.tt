@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sparky</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="/jqm.css" />
+    <script src="/jquery.js"></script>
+        <script>
+            $(document).bind("mobileinit", function(){
+                  $.mobile.ajaxEnabled = false;
+              });
+        </script>
+    <script src="/jqm.js"></script>
+    <script>
+        var path;
+        function addShare() {
+            $.getJSON("/add/share/" + path, function( data ) {
+                if (data.ret) {
+                    $('#options').popup("close");
+
+                    setTimeout(function() {
+                        $('#success').popup("open");
+                    }, 400);
+
+                    setTimeout(function() {
+                        $('#success').popup("close");
+                    }, 3500);
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+
+<div data-role="page" id=page_show class=ui-responsive-panel>
+
+    <div data-role="header">
+        <h1><a href="/dashboard/browse" data-rel="external" data-ajax=false>[% cur_title %]</a></h1>
+        <a href="#nav-panel" data-icon="bars" data-iconpos="notext">Menu</a>
+        <a href="#profile-form" data-icon="plus" data-iconpos="notext">Proflie</a>
+    </div><!-- /header -->
+
+    <div data-role="content">
+        [% IF error %]
+            <ul data-role="listview">
+            <li><a data-rel=dialog href="#profile-form">
+                <p class="ui-li-desc" style="white-space: normal;"><font size=+1>[% error | html %]</font></p>
+            </a></li>
+            </ul>
+        [% END %]
+
+        [% UNLESS have_files %]
+            <ul data-role="listview">
+            <li><a data-rel=dialog href="#profile-form">
+                <p class="ui-li-desc" style="white-space: normal;"><font size=+1>No files found.</font></p>
+            </a></li>
+            </ul>
+        [% END %]
+
+        [% IF have_files %]
+            <ul class="info-taphold" data-role="listview" data-filter="true" data-split-icon="gear" data-inset="true" data-split-theme="d">
+                [% IF entry_name %]
+                <li data-role="list-divider">[% entry_name %]</li>
+                [% END %]
+
+                [% FOREACH entry IN entries %]
+                    <li><a data-ajax=false href="/dashboard/browse/[% entry.path %]">
+                    <h2>[% entry.name | html %]</h2>
+                    <p>[% IF "file" == entry.type %] [% entry.size %] [% ELSE %] Directory [% END %]</p></a>
+                        <a href="#options" data-rel="popup" data-position-to="window" data-transition="pop" onclick="path = '[% entry.path %]';">Link</a>
+                    </li>
+                [% END %]
+            </ul>
+
+        <div data-role="popup" id="success" data-theme="a">
+            <ul data-role="listview" data-inset="true" style="min-width: 210px;" data-theme="b">
+                <li data-icon=false><a href="#">Share added</a></li>
+            </ul>
+        </div>
+
+        <div data-role="popup" id="options" data-theme="a">
+            <ul data-role="listview" data-inset="true" style="min-width: 210px;" data-theme="b">
+                <li data-role="divider" data-theme="a">Options</li>
+                <li data-icon=false><a href="#" onclick="addShare(); return false;">Share</a></li>
+                <li data-icon=false><a href="#" data-rel="back">Cancel</a></li>
+            </ul>
+        </div>
+
+        [% END %]
+    </div><!-- /content -->
+
+            <style>
+                .nav-search .ui-btn-up-a {
+                    background-image:none;
+                    background-color:#333333;
+                }
+                .nav-search .ui-btn-inner {
+                    border-top: 1px solid #888;
+                    border-color: rgba(255, 255, 255, .1);
+                }
+            </style>
+
+                <div data-role="panel" data-position="left" data-position-fixed="false" data-display="reveal" id="nav-panel" data-theme="a">
+
+                    <ul data-filter="true" data-role="listview" data-theme="a" data-divider-theme="a" style="margin-top:-16px;" class="nav-search">
+                        <li data-icon="delete" style="background-color:#111;">
+                            <a href="#" data-rel="close">Close menu</a>
+                        </li>
+                        <li data-icon="plus" style="background-color:#111;">
+                            <a href="/dashboard/shares">Shares</a>
+                        </li>
+                        [% IF c.session.cur_feed %]
+                        <li>
+                            <a href="/dashboard?feed=-1">All Feeds</a>
+                        </li>
+                        [% END %]
+                        [% IF have_feeds %]
+
+                        [% FOREACH feed IN feeds %]
+                        [% IF 0 != feed.count %]
+                        <li>
+                            [% IF 0 %] <span class="ui-li-count">[% feed.count %]</span> [% END %]
+                            <a href="/dashboard?feed=[% feed.id %]">[% feed.name | html %]</a>
+                        </li>
+                        [% END %]
+                        [% END %]
+
+                        <li data-role="list-divider">No entries</li>
+
+                        [% FOREACH feed IN feeds %]
+                        [% IF 0 == feed.count %]
+                        <li>
+                            <a href="/dashboard?feed=[% feed.id %]">[% feed.name | html %]</a>
+                        </li>
+                        [% END %]
+                        [% END %]
+
+                        [% END %]
+                    </ul>
+
+                    <!-- panel content goes here -->
+                </div><!-- /panel -->
+
+                <div data-role="panel" data-position="right" data-position-fixed="false" data-display="overlay" id="profile-form" data-theme="b">
+                    <h2>Profile <font size=-1><a href="mailto:support@filebeagle.com">Contact</font></a></h2>
+
+                    [% IF c.session.cur_feed %]
+                    <form action="/dashboard" method=post>
+                        <input type=hidden name=method value=unsubscribe>
+                        <input value="Unsubscribe" data-theme="b" type="submit">
+                    </form>
+                    [% END %]
+
+                    <form action="/show/userdir" method=post>
+                        <input type=hidden name=method value=new_feed>
+                        <input type="text" placeholder="[% placeholder %]" value="" name="entry.name" data-clear-btn="true" class="ui-input-text ui-body-c">
+                        <input value="Browse" data-theme="b" type="submit">
+                    </form>
+
+                    <hr>
+                    <a href="/logout" data-role="button" data-theme="a" data-rel="external">Logout</a>
+
+                    <hr>
+                    <a href="#" data-rel="close" data-role="button" data-theme="c" data-mini="true">Back</a>
+
+                    <center><h5>Version: 2013-10-20.002</h5></center>
+
+                    <!-- panel content goes here -->
+                </div><!-- /panel -->
+</div><!-- /page -->
+
+</body>
+</html>
+
