@@ -81,10 +81,7 @@ sub login {
         }
     }
 
-    # my $fs = SiteCode::FileSystem->new(route => $self);
-
     $self->session->{have_user} = $params{login};
-    # $self->session->{dir} = $fs->root->id;
 
     $self->redirect_to("/dashboard/browse");
 }

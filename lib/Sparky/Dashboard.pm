@@ -91,14 +91,6 @@ sub findme {
         $$entry{ctime} = $$entry{ctime} ? scalar(localtime($$entry{ctime})) : "";
     }
 
-    # my $dot = Mojo::Util::b64_encode($path, "");
-    # chomp($dot);
-    # my $dotdot = Mojo::Util::b64_encode("$path/..", "");
-    # chomp($dotdot);
-
-    # unshift(@{$entries}, { name => "..", path => $dotdot, type => "directory", size => 0, ctime => 1 });
-    # unshift(@{$entries}, { name => ".", path => $dot, type => "directory", size => 0, ctime => 1 });
-
     my $user = SiteCode::Account->new(route => $self, username => $self->session->{have_user});
     $user->key("_t_entries", $self->dumper($entries));
     $self->flash("entry.name", "Browse");
@@ -128,17 +120,7 @@ sub show {
         $self->stash(have_files => scalar(@$entries));
         $user->key("_t_entries", undef);
     }
-    else {
-        # my $dir = SiteCode::FileSystem::Directory->new(id => $self->session->{dir}, route => $self);
 
-        # my $entries = $dir->entries;
-        # $self->app->log->debug($self->dumper($entries));
-        # $self->stash(have_files => scalar(@$entries));
-        # $self->stash(entries => $entries);
-    }
-
-    # my $dir = SiteCode::FileSystem::Directory->new(id => $self->session->{dir}, route => $self);
-    # $self->stash(cur_title => $dir->name);
     $self->stash(cur_title => "Sparky");
 
     my $home;
