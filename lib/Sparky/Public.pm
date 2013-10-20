@@ -52,7 +52,7 @@ sub pls {
     my @muzak = ();
     foreach my $row (@$paths) {
         my $path = $$row{abs_path};
-        if ($self->dir_contains_path(path => $selection, container => $path)) {
+        if ($self->container_valid(path => $selection, container => $path)) {
             if (-f $selection) {
                 push(@muzak, $selection);
             }
@@ -102,7 +102,7 @@ sub audio {
     my $paths = $dbx->array("SELECT abs_path FROM share ORDER BY 1") || [];
     foreach my $row (@$paths) {
         my $path = $$row{abs_path};
-        if ($self->dir_contains_path(path => $selection, container => $path)) {
+        if ($self->container_valid(path => $selection, container => $path)) {
             if (-f $selection) {
                 push(@muzak, $selection);
             }
@@ -165,7 +165,7 @@ sub m3u {
     my @muzak = ();
     foreach my $row (@$paths) {
         my $path = $$row{abs_path};
-        if ($self->dir_contains_path(path => $selection, container => $path)) {
+        if ($self->container_valid(path => $selection, container => $path)) {
             if (-f $selection) {
                 push(@muzak, $selection);
             }
@@ -207,7 +207,7 @@ sub browse {
 
     foreach my $row (@$paths) {
         my $path = $$row{abs_path};
-        if ($self->dir_contains_path(path => $browse, container => $path)) {
+        if ($self->container_valid(path => $browse, container => $path)) {
             if (-f $browse) {
                 $self->render_file('filepath' => $browse);
                 return;

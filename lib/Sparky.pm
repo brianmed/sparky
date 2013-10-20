@@ -107,34 +107,41 @@ sub phys_file_entry {
     return({ name => $full_path, path => $path, type => $type, size => $stat[7], ctime => $stat[10] });
 }
 
-sub dir_contains_path {
+sub container_valid {
     my $self  = shift;
     my %ops = @_;
-
 
     my $path = $ops{path};
     my $container = $ops{container};
 
-    my @path_stat = ();
-    if (-d $path) {
-        @path_stat = stat($path);
+    if (-f $path && -f $container) {
+        my $ipath = (stat($path))[1];
+        my $icontainer = (stat($container))[1];
+
+        if ($ipath == $icontainer) {
+            return 1;
+        }
+        else {
+            return 0;
+        }
     }
-    else {
-        my (undef, $dirname, undef) = File::Basename::fileparse($path);
-        @path_stat = stat($dirname);
+    elsif (-d $path && -f $container) {
+        return 0;
     }
 
-    # $self->app->log->debug("container: $container");
-    # $self->app->log->debug("path: $path");
-
+    my $icontainer = (stat($container))[1];
+    
     foreach (1 .. 15) {
-        my @container_stat = stat($container);
+        # $self->app->log->debug("path: $path");
+        # $self->app->log->debug("container: $container");
 
-        return 1 if $path_stat[1] == $container_stat[1];
-
-        my (undef, $dirname, undef) = File::Basename::fileparse($container);
-        last if $dirname eq $container;
-        $container = $dirname;
+        my $ipath = (stat($path))[1];
+        if ($ipath == $icontainer) {
+            return 1;
+        }
+        my $dirname = File::Basename::dirname($path);
+        last if $dirname eq $path;
+        $path = $dirname;
     }
 
     return 0;
@@ -148,7 +155,7 @@ sub startup {
     $self->helper(setup_valid => \&setup_valid);
     $self->helper(phys_dir_listing => \&phys_dir_listing);
     $self->helper(phys_file_entry => \&phys_file_entry);
-    $self->helper(dir_contains_path => \&dir_contains_path);
+    $self->helper(container_valid => \&container_valid);
 
     if ($PerlApp::VERSION) {
         my $datafile = "sparky.tgz";
