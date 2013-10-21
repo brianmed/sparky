@@ -165,7 +165,7 @@
                     <hr>
                     <a href="#" data-rel="close" data-role="button" data-theme="c" data-mini="true">Back</a>
 
-                    <center><h5>Version: 2013-10-20.003</h5></center>
+                    <center><h5>Version: [% version %]</h5></center>
 
                     <!-- panel content goes here -->
                 </div><!-- /panel -->

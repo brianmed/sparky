@@ -146,6 +146,12 @@ sub container_valid {
     return 0;
 }
 
+sub version {
+    my $self = shift;
+    
+    return("2013-10-21.001");
+}
+
 sub startup {
     my $self = shift;
     
@@ -155,6 +161,9 @@ sub startup {
     $self->helper(phys_dir_listing => \&phys_dir_listing);
     $self->helper(phys_file_entry => \&phys_file_entry);
     $self->helper(container_valid => \&container_valid);
+    $self->helper(version => \&version);
+
+    warn("Version: " . $self->version, "\n");
 
     if ($PerlApp::VERSION) {
         my $datafile = "sparky.tgz";

@@ -8,6 +8,7 @@ tar -czf sparky.tgz includes
     --add "Sparky::Index" \
     --add "Sparky::Dashboard" \
     --add "Sparky::Public" \
+    --add "Crypt::Eksblowfish::Subkeyed" \
 	--bind "entities.txt[file=lib/Mojo/entities.txt,extract]" \
 	--bind "sparky.tgz[file=sparky.tgz]" \
 	--lib lib \
@@ -23,6 +24,7 @@ tar -czf sparky.tgz includes
     --add "Sparky::Index" \
     --add "Sparky::Dashboard" \
     --add "Sparky::Public" \
+    --add "Crypt::Eksblowfish::Subkeyed" \
 	--bind "entities.txt[file=lib/Mojo/entities.txt,extract]" \
 	--bind "sparky.tgz[file=sparky.tgz]" \
 	--lib lib \
@@ -39,6 +41,7 @@ tar -czf sparky.tgz includes
     --add "Sparky::Index" \
     --add "Sparky::Dashboard" \
     --add "Sparky::Public" \
+    --add "Crypt::Eksblowfish::Subkeyed" \
 	--bind "entities.txt[file=lib/Mojo/entities.txt,extract]" \
 	--bind "sparky.tgz[file=sparky.tgz]" \
 	--lib lib \
@@ -55,6 +58,7 @@ tar -czf sparky.tgz includes
     --add "Sparky::Index" \
     --add "Sparky::Dashboard" \
     --add "Sparky::Public" \
+    --add "Crypt::Eksblowfish::Subkeyed" \
 	--bind "entities.txt[file=lib/Mojo/entities.txt,extract]" \
 	--bind "sparky.tgz[file=sparky.tgz]" \
 	--lib lib \

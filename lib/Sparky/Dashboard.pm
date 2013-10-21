@@ -135,6 +135,7 @@ sub show {
     }
     
     $self->stash(placeholder => $home);
+    $self->stash(version => $self->version);
 
     $self->render("dashboard/show");
 };
