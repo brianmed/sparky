@@ -3,13 +3,12 @@ package SiteCode::Account;
 use SiteCode::Modern;
 
 use Typed;
-# use Moose;
-# use namespace::autoclean;
 
 use Mojo::Util;
 
 use SiteCode::DBX;
 use SiteCode::Site;
+use Crypt::Eksblowfish::Bcrypt;
 
 has 'id' => ( isa => 'Int', is => 'rw' );
 has 'dbx' => ( isa => 'SiteCode::DBX', is => 'ro', lazy => 1, default => sub { SiteCode::DBX->new() } );
@@ -46,13 +45,12 @@ sub BUILD {
                 die("Credentials mis-match.\n");
             }
         }
-        else {
-            $self->password($self->_lookup_password());
-        }
+
+        $self->password($self->_lookup_password());
     };
     if ($@) {
         $self->route->app->log->debug("sparky::Account::new: $@") if $self->route;
-        die("Account::new:: $@\n");
+        die($@);
     }
 }
 
@@ -62,13 +60,13 @@ sub insert
     my %ops = @_;
 
     my $dbx = SiteCode::DBX->new();
-    my $password_md5 = Mojo::Util::md5_sum($ops{password});
+    my $password_hash = $class->hash_password($ops{password});
 
     if ($ops{id}) {
-        $dbx->do("INSERT INTO account (id, username, password) VALUES (?, ?, ?)", undef, $ops{id}, $ops{username}, $password_md5);
+        $dbx->do("INSERT INTO account (id, username, password) VALUES (?, ?, ?)", undef, $ops{id}, $ops{username}, $password_hash);
     }
     else {
-        $dbx->do("INSERT INTO account (username, password) VALUES (?, ?)", undef, $ops{username}, $password_md5);
+        $dbx->do("INSERT INTO account (username, password) VALUES (?, ?)", undef, $ops{username}, $password_hash);
     }
 
     my $id = $dbx->col("SELECT id FROM account WHERE username = ?", undef, $ops{username});
@@ -135,11 +133,9 @@ sub chkPw
     my $self = shift;
     my $pw = shift;
 
-    my $password_md5 = Mojo::Util::md5_sum($pw);
+    my $saved_pw = $self->dbx()->col("SELECT password FROM account WHERE id = ?", undef, $self->id());
 
-    my $ret = $self->dbx()->col("SELECT password FROM account WHERE id = ?", undef, $self->id());
-
-    return($password_md5 eq $ret);
+    return($self->check_password($pw, $saved_pw));
 }
 
 sub exists {
@@ -154,6 +150,35 @@ sub exists {
     return(0);
 }
 
-# __PACKAGE__->meta->make_immutable;
+# http://www.eiboeck.de/blog/2012-09-11-hash-your-passwords
+
+sub check_password { 
+    my $self = shift;
+
+    my $hash = $self->hash_password($_[0], $_[1]);
+
+    return($hash eq $_[1]);
+}
+
+sub hash_password {
+    my $self = shift;
+
+	my ($plain_text, $settings_str) = @_;
+
+    unless ($settings_str) {
+        my $cost = 10;
+        my $nul  = '';
+         
+        $cost = sprintf("%02i", 0+$cost);
+
+        my $settings_base = join('','$2',$nul,'$',$cost, '$');
+
+        my $salt = join('', map { chr(int(rand(256))) } 1 .. 16);
+        $salt = Crypt::Eksblowfish::Bcrypt::en_base64( $salt );
+        $settings_str = $settings_base.$salt;
+    }
+
+	return Crypt::Eksblowfish::Bcrypt::bcrypt($plain_text, $settings_str);
+}
 
 1;

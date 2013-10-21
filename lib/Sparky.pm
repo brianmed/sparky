@@ -20,7 +20,7 @@ sub setup_valid {
         if ("login" eq $topic) {
             $v->required("login");
             $v->size(5, 30);
-            $v->like(qr/^[[:alpha:]]+$/);
+            $v->like(qr/^[[:alnum:]]+$/);
         }
         elsif ("password" eq $topic) {
             $v->required("password");

@@ -11,7 +11,7 @@ sub slash {
     if ($self->session->{have_user}) {
         $self->redirect_to("/dashboard/browse");
     }
-    elsif (!SiteCode::DBX->new()->col("SELECT id FROM account WHERE username = 'admin'")) {
+    elsif (!SiteCode::DBX->new()->col("SELECT id FROM account WHERE id = 1")) {
         $self->redirect_to("/init");
     }
     else {
@@ -87,13 +87,6 @@ sub login {
         $self->render("index/login");
         return;
     }
-
-    unless (SiteCode::Account->exists(username => $params{login})) {
-        $self->flash(login => $params{login});
-        $self->flash(password => $params{password});
-        $self->redirect_to("/add/user");
-        return;
-    }
     
     eval {
         my $user = SiteCode::Account->new(route => $self, username => $params{login}, password => $params{password});
@@ -101,12 +94,10 @@ sub login {
     if ($@) {
         my $err = $@;
 
-        if ($err =~ m/\n\z/) {
-            chomp($err);
-            $self->stash("error", $err);
-            $self->render("index/login");
-            return;
-        }
+        chomp($err);
+        $self->stash("error", $err);
+        $self->render("index/login");
+        return;
     }
 
     $self->session->{have_user} = $params{login};
@@ -130,7 +121,6 @@ sub add_user {
         my $login = $self->flash("login");
         my $password = $self->flash("password");
 
-        $self->stash(info => "Adding: $login") if $login;
         $self->stash(login => $login);
         $self->stash(password => $password);
 
@@ -140,7 +130,11 @@ sub add_user {
     }
 
     if ("127.0.0.1" ne $self->tx->remote_address) {
-        $self->stash(error => "Please add users from localhost.");
+        my $host = $self->req->url->to_abs->host;
+        my $port = $self->req->url->to_abs->port;
+        my $url = $self->url_for("//127.0.0.1:$port/")->to_abs;
+
+        $self->stash(error => "Please add users from <a href='$url'>localhost</a>.");
         $self->render("add/user");
         return;
     }

@@ -14,6 +14,7 @@ tar -czf sparky.tgz includes
 	--lib lib/Sparky \
 	--norunlib \
 	--force \
+	--clean \
 	--exe app/sparky-osx \
 	script/sparky
 
@@ -29,6 +30,7 @@ tar -czf sparky.tgz includes
 	--norunlib \
 	--target windows-x86-32 \
 	--force \
+	--clean \
 	--exe app/sparky-win32.exe \
 	script/sparky
 
@@ -44,6 +46,7 @@ tar -czf sparky.tgz includes
 	--norunlib \
 	--target linux-x86-32 \
 	--force \
+	--clean \
 	--exe app/sparky-linux-x86-32 \
 	script/sparky
 
@@ -59,5 +62,6 @@ tar -czf sparky.tgz includes
 	--norunlib \
 	--target linux-x86-64 \
 	--force \
+	--clean \
 	--exe app/sparky-linux-x86-64 \
 	script/sparky
