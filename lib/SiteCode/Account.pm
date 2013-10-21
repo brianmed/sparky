@@ -167,7 +167,7 @@ sub hash_password {
 
     unless ($settings_str) {
         my $cost = 10;
-        my $nul  = '';
+        my $nul  = 'a';
          
         $cost = sprintf("%02i", 0+$cost);
 

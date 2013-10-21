@@ -9,6 +9,7 @@ use File::Basename;
 use Mojo::Util;
 use Fcntl qw(:mode);
 use Cwd;
+use POSIX qw(uname);
 
 sub setup_valid {
     my $self  = shift;
@@ -103,8 +104,6 @@ sub phys_file_entry {
         $type = "directory";
     }
 
-    # my ($filename, undef, undef) = File::Basename::fileparse($full_path);
-
     return({ name => $full_path, path => $path, type => $type, size => $stat[7], ctime => $stat[10] });
 }
 
@@ -132,8 +131,8 @@ sub container_valid {
 
     # Container is a directory; path can be either
     foreach (1 .. 15) {
-        $self->app->log->debug("path: $path");
-        $self->app->log->debug("container: $container");
+        # $self->app->log->debug("path: $path");
+        # $self->app->log->debug("container: $container");
 
         if ($path eq $container) {
             return 1;
@@ -152,6 +151,12 @@ sub version {
     return("2013-10-21.001");
 }
 
+sub uname {
+    my $self = shift;
+    
+    return(join('|', POSIX::uname()));
+}
+
 sub startup {
     my $self = shift;
     
@@ -162,8 +167,10 @@ sub startup {
     $self->helper(phys_file_entry => \&phys_file_entry);
     $self->helper(container_valid => \&container_valid);
     $self->helper(version => \&version);
+    $self->helper(uname => \&uname);
 
     warn("Version: " . $self->version, "\n");
+    warn("Uname: " . $self->uname, "\n");
 
     if ($PerlApp::VERSION) {
         my $datafile = "sparky.tgz";
