@@ -2,6 +2,7 @@ package Sparky;
 
 use Mojo::Base 'Mojolicious';
 
+use SiteCode::Account;
 use SiteCode::Site;
 use Archive::Tar;
 use File::Basename;
@@ -18,8 +19,8 @@ sub setup_valid {
     foreach my $topic (@{$topics}) {
         if ("login" eq $topic) {
             $v->required("login");
-            $v->size(5, 10);
-            $v->like(qr/^admin$/);
+            $v->size(5, 30);
+            $v->like(qr/^[[:alpha:]]+$/);
         }
         elsif ("password" eq $topic) {
             $v->required("password");
@@ -199,7 +200,7 @@ sub startup {
 
         # Authenticated
         my $name = $self->session->{have_user} || '';
-        return 1 if $name eq 'admin';
+        return 1 if SiteCode::Account->exists(username => $name);
 
         # Not authenticated
         $self->redirect_to('/');
@@ -207,7 +208,7 @@ sub startup {
     });
 
     $r->get('/')->to(controller => 'Index', action => 'slash');
-    $r->get('/init')->to(controller => 'Index', action => 'init');
+    $r->any('/init')->to(controller => 'Index', action => 'init');
     $r->any('/login')->to(controller => 'Index', action => 'login');
     $r->get('/logout')->to(controller => 'Index', action => 'logout');
 

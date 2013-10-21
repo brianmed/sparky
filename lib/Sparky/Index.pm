@@ -35,6 +35,34 @@ sub init {
         $self->stash("info", "Creating admin user");
         return($self->render("index/init"));                                                                                                                                        
     }                                                                                                                                                                   
+
+    my $v = $self->setup_valid([qw(login password _password)]);
+    return $self->render unless $v->has_data;
+
+    my @names = $v->param;
+    my %params;
+    foreach my $name (@names) {
+        $params{$name} = $v->param($name);
+        $self->stash($name, $v->param($name));
+    }
+
+    if ($self->validation->has_error) {
+        $self->render("index/init");
+        return;
+    }
+
+    if (SiteCode::Account->insert(
+            id => 1, 
+            username => $params{login}, 
+            password => $params{password},
+            route => $self,
+    )) {
+        $self->flash(info => "Added: $params{login}");
+        $self->flash(login => $params{login});
+
+        $self->redirect_to("/login");
+        return;
+    }
 }
 
 sub login {

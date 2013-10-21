@@ -64,8 +64,12 @@ sub insert
     my $dbx = SiteCode::DBX->new();
     my $password_md5 = Mojo::Util::md5_sum($ops{password});
 
-    $dbx->do("INSERT INTO account (username, password) VALUES (?, ?)", undef, $ops{username}, $password_md5);
-    # $dbx->dbh->commit;
+    if ($ops{id}) {
+        $dbx->do("INSERT INTO account (id, username, password) VALUES (?, ?, ?)", undef, $ops{id}, $ops{username}, $password_md5);
+    }
+    else {
+        $dbx->do("INSERT INTO account (username, password) VALUES (?, ?)", undef, $ops{username}, $password_md5);
+    }
 
     my $id = $dbx->col("SELECT id FROM account WHERE username = ?", undef, $ops{username});
 
@@ -103,6 +107,7 @@ sub key
 
             if ($defined) {
                 my $id = $dbx->col("SELECT id FROM account_key WHERE account_id = ? AND account_key = ?", undef, $self->id(), $key);
+                $dbx->do("DELETE FROM account_value where account_key_id = ?", undef, $id);
                 $dbx->do("DELETE FROM account_key where id = ?", undef, $id);
 
                 # $dbx->dbh->commit;
