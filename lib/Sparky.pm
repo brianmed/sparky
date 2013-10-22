@@ -148,7 +148,7 @@ sub container_valid {
 sub version {
     my $self = shift;
     
-    return("2013-10-21.001");
+    return("2013-10-21.002");
 }
 
 sub uname {
