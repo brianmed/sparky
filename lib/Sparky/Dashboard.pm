@@ -6,6 +6,7 @@ use SiteCode::Account;
 use SiteCode::DBX;
 use Mojo::Util;
 use Cwd;
+use File::HomeDir;
 
 sub browse {
     my $self = shift;
@@ -16,29 +17,22 @@ sub browse {
     }
 
     my @paths = ();
+
+    push(@paths, File::HomeDir->my_home) if File::HomeDir->my_home;
+    push(@paths, File::HomeDir->my_desktop) if File::HomeDir->my_desktop;
+    push(@paths, File::HomeDir->my_documents) if File::HomeDir->my_documents;
+    push(@paths, File::HomeDir->my_music) if File::HomeDir->my_music;
+    push(@paths, File::HomeDir->my_pictures) if File::HomeDir->my_pictures;
+    push(@paths, File::HomeDir->my_videos) if File::HomeDir->my_videos;
+    push(@paths, File::HomeDir->my_data) if File::HomeDir->my_data;
+
     if ("darwin" eq $^O) {
-        push(@paths, $ENV{HOME});
-        push(@paths, "$ENV{HOME}/Documents");
-        push(@paths, "$ENV{HOME}/Downloads");
-        push(@paths, "$ENV{HOME}/Desktop");
-        push(@paths, "$ENV{HOME}/Music");
-        push(@paths, "$ENV{HOME}/Pictures");
-        push(@paths, "/Volumes");
         push(@paths, "/");
     }
     elsif ("MSWin32" eq $^O) {
-        my $home = "$ENV{HOMEDRIVE}$ENV{HOMEPATH}";
-        push(@paths, $home);
-        push(@paths, "$home\\My Documents");
-        push(@paths, "$home\\Downloads") if -f "$home\\Downloads";
-        push(@paths, "$home\\Desktop");
-        push(@paths, "$home\\My Documents\\My Music");
-        push(@paths, "$home\\My Documents\\My Pictures");
         push(@paths, "C:\\");
     }
     elsif ("linux" eq $^O) {
-        push(@paths, $ENV{HOME});
-        push(@paths, "/mnt");
         push(@paths, "/");
     }
 

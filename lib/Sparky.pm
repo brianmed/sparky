@@ -9,7 +9,7 @@ use File::Basename;
 use Mojo::Util;
 use Fcntl qw(:mode);
 use Cwd;
-use POSIX qw(uname);
+use POSIX qw();
 
 sub setup_valid {
     my $self  = shift;
@@ -154,7 +154,9 @@ sub version {
 sub uname {
     my $self = shift;
     
-    return(join('|', POSIX::uname()));
+    my @u = POSIX::uname();
+
+    return(wantarray ? @u : join("|", @u));
 }
 
 sub startup {
