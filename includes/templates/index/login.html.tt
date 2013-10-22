@@ -7,16 +7,35 @@
 
     <link rel="stylesheet" href="/jqm.css" />
     <script src="/jquery.js"></script>
+    <script src="/jquery.validationEngine-en.js"></script>
+    <script src="/jquery.validationEngine.js"></script>
         <script>
             $(document).bind("mobileinit", function(){
                   $.mobile.ajaxEnabled = false;
             });
 
-            $(document).bind("pageload", function(){
-                $('#pageDialog').click();
+            $(document).bind("pageshow", function(){
+                jQuery("#loginUser").validationEngine();
+                jQuery('input').attr('data-prompt-position','bottomLeft');
+                jQuery('input').data('promptPosition','bottomLeft');
+                jQuery('password').attr('data-prompt-position','bottomLeft');
+                jQuery('password').data('promptPosition','bottomLeft');
+                jQuery('textarea').attr('data-prompt-position','bottomLeft');
+                jQuery('textarea').data('promptPosition','bottomLeft');
+                jQuery('select').attr('data-prompt-position','bottomLeft');
+                jQuery('select').data('promptPosition','bottomLeft');
+
+                $( "input" ).keydown(function() {
+                    jQuery('#loginUser').validationEngine('hide');
+                });
+
+                $( "password" ).keydown(function() {
+                    jQuery('#loginUser').validationEngine('hide');
+                });
             });
         </script>
     <script src="/jqm.js"></script>
+    <link type="text/css" rel="stylesheet" href="/validationEngine.jquery.css"/>
 </head>
 <body>
 
@@ -42,36 +61,14 @@
         </span> [% info || c.flash('info') %] </p>
         [% END %]
 
-            <div data-role="popup" id="popupLogin" class="ui-content" data-theme="e" style="max-width:350px;">
-                              <p>Try logging in as <strong>admin</strong></p>
-                              </div>
-
-            <div data-role="popup" id="popupPassword" class="ui-content" data-theme="e" style="max-width:350px;">
-                              <p>You need 8-16 characters with at least one digit and one alphabet character. </p>
-                              </div>
-
-        <form data-ajax=false action="/login" method="post">
-            [% IF c.validation.has_data && c.validation.has_error('login') %]
-                <div class="ui-grid-a">
-                    <div class="ui-block-a" style="width: 8%;"><a href="#popupLogin" data-rel="popup" data-role="button" class="ui-icon-alt" data-inline="true" data-transition="pop" data-icon="info" data-theme="e" data-iconpos="notext">Learn more</a></div>
-                    <div class="ui-block-b" style="width: 92%;"><input name="login" id="login" placeholder="Login" value="[% login | html %]" type="text" autocapitalize="off"></div>
-                </div>
-            [% ELSE %]
+        <form id=loginUser data-ajax=false action="/login" method="post">
                 <div class="ui-grid-solo">
-                    <div class="ui-block-a"><input name="login" id="login" placeholder="Login" value="[% login | html %]" type="text" autocapitalize="off"></div>
+                    <div class="ui-block-a"><input name="login" id="login" placeholder="Login" value="[% login | html %]" type="text" autocapitalize="off" class="validate[required,custom[onlyLetterSp],minSize[3],maxSize[30]]"></div>
                 </div>
-            [% END %]
 
-            [% IF c.validation.has_data && c.validation.has_error('password') %]
-                <div class="ui-grid-a">
-                    <div class="ui-block-a" style="width: 8%;"><a href="#popupPassword" data-rel="popup" data-role="button" class="ui-icon-alt" data-inline="true" data-transition="pop" data-icon="info" data-theme="e" data-iconpos="notext">Learn more</a></div>
-                    <div class="ui-block-b" style="width: 92%;"><input name="password" id="password" placeholder="Password" value="[% password | html %]" autocapitalize="off" type="password"></div>
-                </div>
-            [% ELSE %]
                 <div class="ui-grid-solo">
-                    <div class="ui-block-a"><input name="password" id="password" placeholder="Password" value="[% password | html %]" autocapitalize="off" type="password"></div>
+                    <div class="ui-block-a"><input name="password" id="password" placeholder="Password" value="[% password | html %]" autocapitalize="off" type="password" class="validate[required,custom[onlyLetterNumber],minSize[5],maxSize[30]]"></div>
                 </div>
-            [% END %]
 
             <div class="ui-grid-a">
                 <div class="ui-block-a"><label><input data-mini="true" type="checkbox" name="hour_session" [% IF hour_session %] checked [% END %]/>Quick login</label></div>

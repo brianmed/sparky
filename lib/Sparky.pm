@@ -269,12 +269,12 @@ sub startup {
     $r->get('/dashboard/shares/m3u/:selection')->to(controller => 'Public', action => 'm3u');
     $r->get('/dashboard/shares/:browse')->to(controller => 'Public', action => 'browse');
 
-    $logged_in->get('/dashboard/browse')->to(controller => 'Dashboard', action => 'browse');
-    $logged_in->get('/dashboard/browse/:findme')->to(controller => 'Dashboard', action => 'findme');
-    $logged_in->get('/dashboard/show')->to(controller => 'Dashboard', action => 'show');
-    $logged_in->post('/show/userdir')->to(controller => 'Dashboard', action => 'userdir');
-    $logged_in->get('/add/share/#b64_path')->to(controller => 'Dashboard', action => 'add_share');
-    $logged_in->get('/del/share/#b64_path')->to(controller => 'Dashboard', action => 'del_share');
+    $is_admin->get('/dashboard/browse')->to(controller => 'Dashboard', action => 'browse');
+    $is_admin->get('/dashboard/browse/:findme')->to(controller => 'Dashboard', action => 'findme');
+    $is_admin->get('/dashboard/show')->to(controller => 'Dashboard', action => 'show');
+    $is_admin->post('/show/userdir')->to(controller => 'Dashboard', action => 'userdir');
+    $is_admin->get('/add/share/#b64_path')->to(controller => 'Dashboard', action => 'add_share');
+    $is_admin->get('/del/share/#b64_path')->to(controller => 'Dashboard', action => 'del_share');
 
     $is_admin->any('/add/user')->to(controller => 'Index', action => 'add_user');
 }

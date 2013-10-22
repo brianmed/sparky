@@ -9,7 +9,12 @@ sub slash {
     my $self = shift;
 
     if ($self->session->{have_user}) {
-        $self->redirect_to("/dashboard/browse");
+        if ($self->is_admin) {
+            $self->redirect_to("/dashboard/browse");
+        }
+        else {
+            $self->redirect_to("/dashboard/shares");
+        }
     }
     elsif (!SiteCode::DBX->new()->col("SELECT id FROM account WHERE id = 1")) {
         $self->redirect_to("/init");
@@ -102,7 +107,12 @@ sub login {
 
     $self->session->{have_user} = $params{login};
 
-    $self->redirect_to("/dashboard/browse");
+    if ($self->is_admin) {
+        $self->redirect_to("/dashboard/browse");
+    }
+    else {
+        $self->redirect_to("/dashboard/shares");
+    }
 }
 
 sub logout {

@@ -42,6 +42,7 @@
     <div data-role="header">
         <a data-ajax=false id=goFetch href="/" data-icon="home">Home</a>
         <h1><a href="/dashboard/shares" data-rel="external" data-ajax=false>Sparky [Guest]</a></h1>
+        <a data-ajax=false id=goLogout href="/logout" data-icon="delete">Logout</a>
     </div><!-- /header -->
 
     <div data-role="content">
