@@ -1,5 +1,5 @@
 1) Unzip the executable for your system to a directory and run it.
 
-2) Connect to http://localhost:8080 and add an admin account (try logging in as admin).
+2) Connect to http://localhost:8080; create a user, then login as them.
 
 3) Have fun.
