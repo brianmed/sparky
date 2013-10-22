@@ -111,6 +111,11 @@
                         <li data-icon="plus" style="background-color:#111;">
                             <a href="/dashboard/shares">Shares</a>
                         </li>
+                        [% IF h.is_admin %] 
+                        <li data-icon="plus" style="background-color:#111;">
+                            <a href="/add/user">Add User</a>
+                        </li>
+                        [% END %]
                         [% IF c.session.cur_feed %]
                         <li>
                             <a href="/dashboard?feed=-1">All Feeds</a>

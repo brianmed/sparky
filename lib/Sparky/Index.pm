@@ -162,7 +162,7 @@ sub add_user {
         $self->flash(info => "Added: $params{login}");
         $self->flash(login => $params{login});
 
-        $self->redirect_to("/login");
+        $self->redirect_to("/");
         return;
     }
 

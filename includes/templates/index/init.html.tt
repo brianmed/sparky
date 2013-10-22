@@ -19,15 +19,22 @@
         <script>
             $(document).bind("pageshow", function(){
                 jQuery("#formLogin").validationEngine();
-                jQuery('input').attr('data-prompt-position','topLeft');
-                jQuery('input').data('promptPosition','topLeft');
-                jQuery('password').attr('data-prompt-position','topLeft');
-                jQuery('password').data('promptPosition','topLeft');
-                jQuery('textarea').attr('data-prompt-position','topLeft');
-                jQuery('textarea').data('promptPosition','topLeft');
-                jQuery('select').attr('data-prompt-position','topLeft');
-                jQuery('select').data('promptPosition','topLeft');
+                jQuery('input').attr('data-prompt-position','bottomLeft');
+                jQuery('input').data('promptPosition','bottomLeft');
+                jQuery('password').attr('data-prompt-position','bottomLeft');
+                jQuery('password').data('promptPosition','bottomLeft');
+                jQuery('textarea').attr('data-prompt-position','bottomLeft');
+                jQuery('textarea').data('promptPosition','bottomLeft');
+                jQuery('select').attr('data-prompt-position','bottomLeft');
+                jQuery('select').data('promptPosition','bottomLeft');
 
+                $( "input" ).keydown(function() {
+                    jQuery('#formLogin').validationEngine('hide');
+                });
+
+                $( "password" ).keydown(function() {
+                    jQuery('#formLogin').validationEngine('hide');
+                });
             });
         </script>
     <script src="/jqm.js"></script>
@@ -52,14 +59,14 @@
         </span> [% success %] </p>
         [% END %]
 
-        [% IF info %]
+        [% IF 0 && info %]
         <p><span> <a data-inline="true" data-iconpos="notext" data-icon="info" data-role="button" class="ui-icon-alt ui-btn ui-shadow ui-btn-corner-all ui-btn-inline ui-btn-icon-notext ui-btn-up-e" href="#" data-corners="true" data-shadow="true" data-iconshadow="true" data-wrapperels="span" data-theme="e"><span class="ui-btn-inner"><span class="ui-btn-text">Info</span><span class="ui-icon ui-icon-info ui-icon-shadow"></span></span></a>
         </span> [% info %] </p>
         [% END %]
 
         <form id=formLogin data-ajax=false action="/init" method="post">
                 <div class="ui-grid-solo">
-                    <div class="ui-block-a"><input name="login" id="login" placeholder="Login" value="[% login | html %]" type="text" autocapitalize="off" class="validate[required,custom[onlyLetterSp],minSize[5],maxSize[30]]"></div>
+                    <div class="ui-block-a"><input name="login" id="login" placeholder="Login" value="[% login | html %]" type="text" autocapitalize="off" class="validate[required,custom[onlyLetterSp],minSize[3],maxSize[30]]"></div>
                 </div>
 
                 <div class="ui-grid-solo">

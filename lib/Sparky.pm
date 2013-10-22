@@ -20,7 +20,7 @@ sub setup_valid {
     foreach my $topic (@{$topics}) {
         if ("login" eq $topic) {
             $v->required("login");
-            $v->size(5, 30);
+            $v->size(3, 30);
             $v->like(qr/^[[:alnum:]]+$/);
         }
         elsif ("password" eq $topic) {
@@ -159,6 +159,19 @@ sub uname {
     return(wantarray ? @u : join("|", @u));
 }
 
+sub is_admin {
+    my $self = shift;
+
+    my $name = $self->session->{have_user} || '';
+    if (!$name) {
+        return(undef);
+    }
+
+    my $id = SiteCode::Account->exists(username => $name);
+    
+    return(1 == $id);
+}
+
 sub startup {
     my $self = shift;
     
@@ -170,6 +183,7 @@ sub startup {
     $self->helper(container_valid => \&container_valid);
     $self->helper(version => \&version);
     $self->helper(uname => \&uname);
+    $self->helper(is_admin => \&is_admin);
 
     warn("Version: " . $self->version, "\n");
     warn("Uname: " . $self->uname, "\n");
@@ -225,12 +239,29 @@ sub startup {
         return undef;
     });
 
+    my $is_admin = $r->under (sub {
+        my $self = shift;
+
+        my $is = $self->is_admin;
+
+        if (!defined $is) {
+            # Not authenticated
+            $self->redirect_to('/');
+            return undef;
+        }
+
+        if (0 == $is) {
+            $self->redirect_to('/');
+            return undef;
+        }
+
+        return 1;
+    });
+
     $r->get('/')->to(controller => 'Index', action => 'slash');
     $r->any('/init')->to(controller => 'Index', action => 'init');
     $r->any('/login')->to(controller => 'Index', action => 'login');
     $r->get('/logout')->to(controller => 'Index', action => 'logout');
-
-    $r->any('/add/user')->to(controller => 'Index', action => 'add_user');
     
     $r->get('/dashboard/shares')->to(controller => 'Public', action => 'shares');
     $r->get('/dashboard/shares/pls/:selection')->to(controller => 'Public', action => 'pls');
@@ -244,6 +275,8 @@ sub startup {
     $logged_in->post('/show/userdir')->to(controller => 'Dashboard', action => 'userdir');
     $logged_in->get('/add/share/#b64_path')->to(controller => 'Dashboard', action => 'add_share');
     $logged_in->get('/del/share/#b64_path')->to(controller => 'Dashboard', action => 'del_share');
+
+    $is_admin->any('/add/user')->to(controller => 'Index', action => 'add_user');
 }
 
 1;
