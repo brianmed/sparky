@@ -20,14 +20,13 @@ sub setup_valid {
     foreach my $topic (@{$topics}) {
         if ("login" eq $topic) {
             $v->required("login");
-            $v->size(3, 30);
+            $v->size(3, 16);
             $v->like(qr/^[[:alnum:]]+$/);
         }
         elsif ("password" eq $topic) {
             $v->required("password");
             $v->size(8, 16);
-            $v->like(qr/[[:word:]]/);
-            $v->like(qr/[[:digit:]]/);
+            $v->like(qr/^[0-9a-zA-Z]+$/),
         }
         elsif ("_password" eq $topic) {
             $v->required("_password");
@@ -264,13 +263,21 @@ sub startup {
     $r->get('/logout')->to(controller => 'Index', action => 'logout');
     
     $r->get('/dashboard/shares')->to(controller => 'Public', action => 'shares');
+
     $r->get('/dashboard/shares/pls/:selection')->to(controller => 'Public', action => 'pls');
     $r->get('/dashboard/shares/audio/:selection/:mode' => {mode => 'html'})->to(controller => 'Public', action => 'audio');
     $r->get('/dashboard/shares/m3u/:selection')->to(controller => 'Public', action => 'm3u');
     $r->get('/dashboard/shares/:browse')->to(controller => 'Public', action => 'browse');
 
+    $is_admin->get('/dashboard/itunes')->to(controller => 'Dashboard', action => 'itunes');
+    $is_admin->get('/dashboard/itunes/audio/:mode/:selection')->to(controller => 'Dashboard', action => 'audio');
+    $is_admin->get('/dashboard/itunes/audio/:mode/:selection')->to(controller => 'Dashboard', action => 'audio');
+    $is_admin->get('/dashboard/itunes/:type')->to(controller => 'Dashboard', action => 'itunes');
+
     $is_admin->get('/dashboard/browse')->to(controller => 'Dashboard', action => 'browse');
+    $is_admin->get('/dashboard/browse/audio/:selection/:mode' => {mode => 'html'})->to(controller => 'Dashboard', action => 'audio');
     $is_admin->get('/dashboard/browse/:findme')->to(controller => 'Dashboard', action => 'findme');
+
     $is_admin->get('/dashboard/show')->to(controller => 'Dashboard', action => 'show');
     $is_admin->post('/show/userdir')->to(controller => 'Dashboard', action => 'userdir');
     $is_admin->get('/add/share/#b64_path')->to(controller => 'Dashboard', action => 'add_share');

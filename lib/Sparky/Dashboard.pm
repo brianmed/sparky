@@ -7,6 +7,11 @@ use SiteCode::DBX;
 use Mojo::Util;
 use Cwd;
 use File::HomeDir;
+use Mac::iTunes::Library;
+use Mac::iTunes::Library::Item;
+use Mac::iTunes::Library::XML;
+use MP3::Info;
+use MP4::Info;
 
 sub browse {
     my $self = shift;
@@ -167,10 +172,8 @@ sub del_share {
     my $ret = 0;
     eval {
         my $dbx = SiteCode::DBX->new();
-        $self->app->log->debug("Hi");
         $dbx->do("DELETE FROM share WHERE abs_path = ?", undef, $abs);
         $ret = 1;
-        $self->app->log->debug("There");
     };
     if ($@) {
         $self->stash(error => $@);
@@ -212,6 +215,178 @@ sub userdir {
      }
  
      $self->redirect_to("/dashboard/show");
+}
+
+sub itunes {
+     my $self = shift;
+ 
+     my $music_dir = File::HomeDir->my_music;
+
+     $self->stash(cur_title => "Sparky");
+     $self->stash(menu => 1);
+
+     my $xml = "$music_dir/iTunes/iTunes Music Library.xml";
+     if (-f $xml) {
+         $self->stash(have_xml => 1);
+     }
+     else {
+         $self->stash(no_xml => 1);
+     }
+
+     my $type = $self->param("type");
+     if ($type) {
+        if ("albums" eq $type) {
+            my $albums = $self->_albums($xml);
+            my @albums = ();
+
+            foreach my $album (sort keys %$albums) {
+                push(@albums, { path => Mojo::Util::b64_encode($album), name => $album });
+            }
+            $self->stash(albums => \@albums);
+        }
+        else {
+            my $tracks = $self->_tracks($xml);
+
+            $self->stash(tracks => $tracks);
+        }
+
+        $self->stash(menu => 0);
+     }
+
+     $self->render("dashboard/itunes");
+}
+
+sub _tracks {
+    my $self = shift;
+    my $file = shift;
+
+    my $library = Mac::iTunes::Library->new();
+    $library = Mac::iTunes::Library::XML->parse($file);
+
+    my %items = $library->items();
+
+    my %albums = ();
+
+    while ((my ($artist, $artistSongs)) = each %items) {
+        while ((my ($songName, $artistSongItems)) = each %$artistSongs) {
+            foreach my $item (@$artistSongItems) {
+                # Do something here to every item in the library
+                my $album = $item->{Album};
+                my $track = $item->{"Track Number"};
+
+                if (!$album || !$track) {
+                    next;
+                }
+
+                $albums{$album}{$track} = $item;
+            }
+        }
+    }
+
+    my %tracks = ();
+
+    foreach my $album (sort keys %albums) {
+        foreach my $track (sort( {$a <=> $b} keys %{$albums{$album}})) {
+            my $item = $albums{$album}{$track};
+
+            $$item{Location} =~ s#file://localhost##;
+            push(@{$tracks{$album}}, { path => Mojo::Util::b64_encode($$item{Location}), name => $$item{Name} });
+        }
+    }
+
+    return(\%tracks);
+}
+
+sub _albums {
+    my $self = shift;
+    my $file = shift;
+
+    my $library = Mac::iTunes::Library->new();
+    $library = Mac::iTunes::Library::XML->parse($file);
+
+    my %items = $library->items();
+
+    my %albums = ();
+
+    while ((my ($artist, $artistSongs)) = each %items) {
+        while ((my ($songName, $artistSongItems)) = each %$artistSongs) {
+            foreach my $item (@$artistSongItems) {
+                # Do something here to every item in the library
+                my $album = $item->{Album};
+                my $track = $item->{"Track Number"};
+
+                if (!$album || !$track) {
+                    next;
+                }
+
+                $albums{$album}{$track} = $item;
+            }
+        }
+    }
+
+    return(\%albums);
+}
+
+sub audio {
+    my $self = shift;
+
+    my $selection = $self->param("selection");
+    return unless $selection;
+    $selection = Mojo::Util::b64_decode($selection);
+    # $selection = Cwd::abs_path($selection);
+    
+    my $mode = $self->param("mode");
+    return unless $mode;
+
+    my $music_dir = File::HomeDir->my_music;
+    my $xml_file = "$music_dir/iTunes/iTunes Music Library.xml";
+    my $albums = $self->_albums($xml_file);
+    my @albums = ();
+    my @muzak = ();
+
+    if ("album" eq $mode) {
+        foreach my $album (sort keys %$albums) {
+            next unless $album eq $selection;
+            foreach my $track (sort( {$a <=> $b} keys %{$$albums{$album}})) {
+                my $l = $$albums{$album}{$track}{Location};
+                $l =~ s#file://localhost##;
+
+                push(@muzak, $l);
+            }
+        }
+    }
+    else {
+        push(@muzak, $selection);
+    }
+
+    my @playlist = ();
+    foreach my $file (@muzak) {
+        $file = Mojo::Util::url_unescape($file);
+        my $muzak;
+        my $ext = "";
+        if ($file =~ m/\.mp3/i) {
+            $muzak = MP3::Info->new($file);
+            $ext = "mp3";
+        }
+        else {
+            $muzak = MP4::Info->new($file);
+            $ext = "mp4";
+        }
+        my $b64 = Mojo::Util::b64_encode($file, "");
+        my $src = $self->url_for("/dashboard/browse/$b64")->to_abs;
+
+        my $title = $muzak ? $muzak->title : $file;
+        unless ($muzak) {
+            $title =~ s#.*/##;
+            $title =~ s#.mp(3|4)##i;
+        }
+        $title =~ s#"#\\"#g;
+        push(@playlist, { title => $title, src => $src, ext => $ext });
+    }
+
+    $self->stash(playlist => \@playlist);
+
+    return $self->render("dashboard/audio");
 }
 
 1;

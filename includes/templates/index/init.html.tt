@@ -59,18 +59,18 @@
         </span> [% success %] </p>
         [% END %]
 
-        [% IF 0 && info %]
+        [% IF info %]
         <p><span> <a data-inline="true" data-iconpos="notext" data-icon="info" data-role="button" class="ui-icon-alt ui-btn ui-shadow ui-btn-corner-all ui-btn-inline ui-btn-icon-notext ui-btn-up-e" href="#" data-corners="true" data-shadow="true" data-iconshadow="true" data-wrapperels="span" data-theme="e"><span class="ui-btn-inner"><span class="ui-btn-text">Info</span><span class="ui-icon ui-icon-info ui-icon-shadow"></span></span></a>
         </span> [% info %] </p>
         [% END %]
 
         <form id=formLogin data-ajax=false action="/init" method="post">
                 <div class="ui-grid-solo">
-                    <div class="ui-block-a"><input name="login" id="login" placeholder="Login" value="[% login | html %]" type="text" autocapitalize="off" class="validate[required,custom[onlyLetterSp],minSize[3],maxSize[30]]"></div>
+                    <div class="ui-block-a"><input name="login" id="login" placeholder="Login" value="[% login | html %]" type="text" autocapitalize="off" class="validate[required,custom[onlyLetterSp],minSize[3],maxSize[16]]"></div>
                 </div>
 
                 <div class="ui-grid-solo">
-                    <div class="ui-block-a"><input name="password" id="password" placeholder="Password" value="[% password | html %]" autocapitalize="off" type="password" class="validate[required,custom[onlyLetterNumber],minSize[5],maxSize[30]]"></div>
+                    <div class="ui-block-a"><input name="password" id="password" placeholder="Password" value="[% password | html %]" autocapitalize="off" type="password" class="validate[required,custom[onlyLetterNumber],minSize[8],maxSize[16]]"></div>
                 </div>
 
                 <div class="ui-grid-solo">

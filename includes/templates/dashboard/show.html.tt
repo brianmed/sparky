@@ -15,6 +15,13 @@
     <script src="/jqm.js"></script>
     <script>
         var path;
+        function addPath(h, middle) {
+            $(h).attr("href", '/dashboard/browse' + middle + '/' + path);
+
+            setTimeout(function() {
+                $('#options').popup("close");
+            }, 3000);
+        }
         function addShare() {
             $.getJSON("/add/share/" + path, function( data ) {
                 if (data.ret) {
@@ -84,6 +91,9 @@
             <ul data-role="listview" data-inset="true" style="min-width: 210px;" data-theme="b">
                 <li data-role="divider" data-theme="a">Options</li>
                 <li data-icon=false><a href="#" onclick="addShare(); return false;">Share</a></li>
+                <li data-icon=false><a href="#" onclick="addPath(this, '/pls'); return true;">PLS File</a></li>
+                <li data-icon=false><a href="#" onclick="addPath(this, '/m3u'); return true;">M3U File</a></li>
+                <li data-icon=false><a href="#" onclick="addPath(this, '/audio'); return true;">HTML5 audio</a></li>
                 <li data-icon=false><a href="#" data-rel="back">Cancel</a></li>
             </ul>
         </div>
@@ -109,40 +119,21 @@
                             <a href="#" data-rel="close">Close menu</a>
                         </li>
                         <li data-icon="plus" style="background-color:#111;">
+                            <a href="/dashboard/itunes">iTunes</a>
+                        </li>
+                        <li data-icon="plus" style="background-color:#111;">
+                            <a href="/dashboard/browse">Files</a>
+                        </li>
+                        <li data-icon="plus" style="background-color:#111;">
                             <a href="/dashboard/shares">Shares</a>
                         </li>
-                        [% IF h.is_admin %] 
+                        [% IF 0 && h.is_admin %] 
                         <li data-icon="plus" style="background-color:#111;">
                             <a href="/add/user">Add User</a>
                         </li>
                         [% END %]
-                        [% IF c.session.cur_feed %]
-                        <li>
-                            <a href="/dashboard?feed=-1">All Feeds</a>
-                        </li>
-                        [% END %]
-                        [% IF have_feeds %]
 
-                        [% FOREACH feed IN feeds %]
-                        [% IF 0 != feed.count %]
-                        <li>
-                            [% IF 0 %] <span class="ui-li-count">[% feed.count %]</span> [% END %]
-                            <a href="/dashboard?feed=[% feed.id %]">[% feed.name | html %]</a>
-                        </li>
-                        [% END %]
-                        [% END %]
-
-                        <li data-role="list-divider">No entries</li>
-
-                        [% FOREACH feed IN feeds %]
-                        [% IF 0 == feed.count %]
-                        <li>
-                            <a href="/dashboard?feed=[% feed.id %]">[% feed.name | html %]</a>
-                        </li>
-                        [% END %]
-                        [% END %]
-
-                        [% END %]
+                        <!-- <li data-role="list-divider">No entries</li> -->
                     </ul>
 
                     <!-- panel content goes here -->

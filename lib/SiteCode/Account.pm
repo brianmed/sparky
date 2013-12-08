@@ -144,7 +144,7 @@ sub exists {
     my %opt = @_;
 
     if ($opt{username}) {
-        return(SiteCode::DBX->new()->col("SELECT id FROM account WHERE username = ?", undef, lc $opt{username}));
+        return(SiteCode::DBX->new()->col("SELECT id FROM account WHERE username = ?", undef, $opt{username}));
     }
 
     return(0);

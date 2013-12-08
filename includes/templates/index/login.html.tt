@@ -67,7 +67,7 @@
                 </div>
 
                 <div class="ui-grid-solo">
-                    <div class="ui-block-a"><input name="password" id="password" placeholder="Password" value="[% password | html %]" autocapitalize="off" type="password" class="validate[required,custom[onlyLetterNumber],minSize[5],maxSize[30]]"></div>
+                    <div class="ui-block-a"><input name="password" id="password" placeholder="Password" value="[% password | html %]" autocapitalize="off" type="password" class="validate[required,custom[onlyLetterNumber],minSize[8],maxSize[16]]"></div>
                 </div>
 
             <div class="ui-grid-a">

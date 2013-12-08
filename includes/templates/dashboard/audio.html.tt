@@ -1,103 +1,114 @@
 <!DOCTYPE html>
-<html lang="en">
-	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0;">
-		<title>Responsive jPlayer Layout</title>
-        <link href='http://fonts.googleapis.com/css?family=Poiret+One' rel='stylesheet' type='text/css' />
-		<link rel="stylesheet" href="/audio/circle.skin/circle.player.css" />
-	</head>
-	<body>
-    <script>
-        document.write('<a href="' + document.referrer + '">Go Back</a>');
-    </script>
-    || <a href="http://www.beyondhyper.com/jplayer/">White Noise</a>
-	<div id="white-noise-player" class="cp-jplayer"></div>
-	<div id="wrapper">
-		<div id="content">
-			<div id="music">
-				<h2>Music</h2>
-				<div class="player-wrapper">
-					<div id="cp_container">
-						<div class="cp-container">
-							<div class="cp-buffer-holder">
-								<div class="cp-buffer-1"></div>
-								<div class="cp-buffer-2"></div>
-							</div>
-							<div class="cp-progress-holder">
-								<div class="cp-progress-1"></div>
-								<div class="cp-progress-2"></div>
-							</div>
-							<div class="cp-circle-control"></div>
-							<ul class="cp-controls">
-								<li><a href="#" class="cp-play" tabindex="1">play</a></li>
-								<li><a href="#" class="cp-pause" style="display:none;" tabindex="1">pause</a></li>
-							</ul>
-						</div>
-						<div class="jp-playlist">
-							<ul>
-								<li></li> <!-- Empty <li> so your HTML conforms with the W3C spec -->
-							</ul>
+<html>
+<head>
+<meta charset=utf-8 />
+
+<!-- Website Design By: www.happyworm.com -->
+<title>Demo : jPlayer as an audio playlist player</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta name="description" content="The CSS styleable jQuery media player plugin with HTML5 support!" />
+<meta name="keywords" content="jPlayer, jQuery, jQuery plugin, media, video, audio, media player, video player, audio player, mp3, mp4, m4a, m4v, aac, h264, ogg, oga, ogv, wav, webm" />
+<meta name="company" content="Happyworm" />
+<link href="/audio/jPlayer.css" rel="stylesheet" type="text/css" />
+<!--[if lt IE 9]>
+  <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+<!--[if IE 6]>
+<link href="/css/ie6.css" rel="stylesheet" type="text/css" />
+<![endif]-->
+<link href="/audio/prettify-jPlayer.css" rel="stylesheet" type="text/css" />
+<link href="/audio/jplayer.blue.monday.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script type="text/javascript" src="/audio/jquery.jplayer.js"></script>
+<script type="text/javascript" src="/audio/jplayer.playlist.min.js"></script>
+<script type="text/javascript">
+//<![CDATA[
+$(document).ready(function(){
+
+	new jPlayerPlaylist({
+		jPlayer: "#jquery_jplayer_1",
+		cssSelectorAncestor: "#jp_container_1"
+	}, [
+        [% FOREACH file IN playlist %]
+		{
+			title:"[% file.title %]",
+			[% file.ext %]:"[% file.src %]"
+        [% IF loop.last %]
+            }
+        [% ELSE %]
+            },
+        [% END %]
+        [% END %]
+	]);
+
+/*
+, {
+		wmode: "window",
+		smoothPlayBar: true,
+		keyEnabled: true
+	});
+*/
+});
+//]]>
+</script>
+</head>
+<body class="demo" onload="prettyPrint();">
+<script>
+    document.write('<a href="' + document.referrer + '">Go Back</a>');
+</script>
+|| <a href="/dashboard/browse">Go Home</a>
+<div id="container">
+
+	<div id="content_main">
+
+		<div id="jquery_jplayer_1" class="jp-jplayer"></div>
+
+		<div id="jp_container_1" class="jp-audio">
+			<div class="jp-type-playlist">
+				<div class="jp-gui jp-interface">
+					<ul class="jp-controls">
+						<li><a href="javascript:;" class="jp-previous" tabindex="1">previous</a></li>
+						<li><a href="javascript:;" class="jp-play" tabindex="1">play</a></li>
+						<li><a href="javascript:;" class="jp-pause" tabindex="1">pause</a></li>
+						<li><a href="javascript:;" class="jp-next" tabindex="1">next</a></li>
+						<li><a href="javascript:;" class="jp-stop" tabindex="1">stop</a></li>
+						<li><a href="javascript:;" class="jp-mute" tabindex="1" title="mute">mute</a></li>
+						<li><a href="javascript:;" class="jp-unmute" tabindex="1" title="unmute">unmute</a></li>
+						<li><a href="javascript:;" class="jp-volume-max" tabindex="1" title="max volume">max volume</a></li>
+					</ul>
+					<div class="jp-progress">
+						<div class="jp-seek-bar">
+							<div class="jp-play-bar"></div>
 						</div>
 					</div>
+					<div class="jp-volume-bar">
+						<div class="jp-volume-bar-value"></div>
+					</div>
+					<div class="jp-time-holder">
+						<div class="jp-current-time"></div>
+						<div class="jp-duration"></div>
+					</div>
+					<ul class="jp-toggles">
+						<li><a href="javascript:;" class="jp-shuffle" tabindex="1" title="shuffle">shuffle</a></li>
+						<li><a href="javascript:;" class="jp-shuffle-off" tabindex="1" title="shuffle off">shuffle off</a></li>
+						<li><a href="javascript:;" class="jp-repeat" tabindex="1" title="repeat">repeat</a></li>
+						<li><a href="javascript:;" class="jp-repeat-off" tabindex="1" title="repeat off">repeat off</a></li>
+					</ul>
+				</div>
+				<div class="jp-playlist">
+					<ul>
+						<li></li>
+					</ul>
+				</div>
+				<div class="jp-no-solution">
+					<span>Update Required</span>
+					To play the media you will need to either update your browser to a recent version or update your <a href="http://get.adobe.com/flashplayer/" target="_blank">Flash plugin</a>.
 				</div>
 			</div>
 		</div>
 	</div>
-	<!-- <script type="text/javascript" src="/jquery.js"></script> TODO -->
-    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-	<script src="/audio/whitenoise.player.min.js"></script>
-	<script>
-	$(document).ready(function(){
-	// Get the Playlist from the xml file
-	$.ajax({
-        type: "GET",
-			url: "[% playlist_url %]",
-			dataType: "xml",
-			success: function(result) {
-				$(result).find('track').each(function(){
-					var self = $(this),
-						 mytitle = self.find('title').text(),
-						 myartist = self.find('artist').text(),
-						 mymp3 = self.find('mp3').text(),
-						 myduration = self.find('duration').text(),
-						 playlist = JSON.stringify({ title: mytitle, artist : myartist, mp3 : mymp3, duration : myduration }),// Convert the XML nodes into JSON formatted strings
-						 playlistObject = $.parseJSON(playlist); // Convert the JSON formatted strings into JSON objects and add to playlist
-					
-					myPlaylist.add(playlistObject);
-			});
-		}
-	});
+</div>
+</body>
+<script type="text/javascript" src="/audio/prettify-jPlayer.js"></script>
 
-	 // WhiteNoise Player instance
-		var whiteNoise = new CirclePlayer("#white-noise-player", {}, {
-				cssSelectorAncestor: "#cp_container"
-		});
-	
-		// WhiteNoise Playlist instance
-		var myPlaylist = new jPlayerPlaylist({
-			jPlayer: "#white-noise-player",
-			cssSelectorAncestor: "#cp_container",
-		}, [ 
-				// Playlist is created when the page loads via ajax
-			], 
-		{
-			playlistOptions: {
-			  autoPlay: false, // self explanatory
-			  loopOnPrevious: false, //  If loop is active, the playlist will loop back to the end when executing previous()
-			  shuffleOnLoop: true, //  If loop and shuffle are active, the playlist will shuffle when executing next() on the last item
-			  enableRemoveControls: false, // Adds an x that allows user to remove songs from playlist
-			  displayTime: 0, // how fast the playlist transitions on page load
-			  addTime: 'fast', // transition time when adding a song
-			  removeTime: 'fast', // transition time when removing a song
-			  shuffleTime: 'slow' // transition time when shuffling playlist
-			},
-			supplied: "mp3", // add the file format extension you will be streaming
-			wmode: "window"
-	
-		});
-	});
-	</script>
-	</body>
 </html>
-
