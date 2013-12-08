@@ -39,7 +39,11 @@ $(document).ready(function(){
             },
         [% END %]
         [% END %]
-	]);
+        ], {
+playlistOptions: {
+    autoPlay: true
+    }});
+
 
 /*
 , {
