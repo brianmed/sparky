@@ -208,6 +208,7 @@ CREATE TABLE account_value(
 CREATE TABLE share(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   abs_path VARCHAR(1024) not null unique,
+  timelimit integer,
   updated timestamp not null default CURRENT_TIMESTAMP,
   inserted timestamp not null default CURRENT_TIMESTAMP
 );

@@ -80,7 +80,21 @@ sub findme {
     $path = Mojo::Util::b64_decode($path);
 
     if (-f $path) {
-        $self->render_file('filepath' => $path);
+        $self->app->types->type(mp4 => 'video/x-m4v');
+        $self->app->types->type(mpg => 'video/mpg');
+        $self->app->types->type(mpeg => 'video/mpeg');
+        # $self->render_file('filepath' => $path);
+        # $self->render_static($path);
+
+        $path =~ m#\.(\w+)#;
+        my $format = $1 || "pdf";
+
+        $self->render_file(
+            'filepath' => $path,
+            'format' => $format,
+            'content_disposition' => 'inline',   # will change Content-Disposition from "attachment" to "inline"
+        );
+
         return;
     }
 
@@ -143,23 +157,36 @@ sub add_share {
     my $self = shift;
 
     my $b64_path = $self->param("b64_path");
+    my $timed = $self->param("timed");
     my $path = Mojo::Util::b64_decode($b64_path);
     my $abs = Cwd::abs_path($path);
 
     my $ret = 0;
+    my $whence = time();
     eval {
         my $dbx = SiteCode::DBX->new();
+
         my $id = $dbx->col("SELECT id FROM share WHERE abs_path = ?", undef, $abs);
         if ($id) {
             $ret = 1;
+
+            my $t = $dbx->col("SELECT timelimit FROM share WHERE abs_path = ?", undef, $abs);
+            if ($t) {
+                $whence = $t;
+            }
         }
         else {
-            $dbx->do("INSERT INTO share (abs_path) VALUES (?)", undef, $abs);
+            if ($timed) {
+                $dbx->do("INSERT INTO share (abs_path, timelimit) VALUES (?, ?)", undef, $abs, $whence);
+            }
+            else {
+                $dbx->do("INSERT INTO share (abs_path) VALUES (?)", undef, $abs);
+            }
             $ret = 1;
         }
     };
     
-    $self->render(json => { ret => $ret });
+    $self->render(json => { ret => $ret, whence => $whence });
 };
 
 sub del_share {

@@ -22,18 +22,29 @@
                 $('#options').popup("close");
             }, 3000);
         }
-        function addShare() {
-            $.getJSON("/add/share/" + path, function( data ) {
+        function addShare(priv) {
+            $.getJSON("/add/share/" + path + "/timed", function( data ) {
                 if (data.ret) {
                     $('#options').popup("close");
 
-                    setTimeout(function() {
-                        $('#success').popup("open");
-                    }, 400);
+                    if (priv) {
+                        var url = '[% h.url_for("/dashboard/shares/").to_abs %]';
 
-                    setTimeout(function() {
-                        $('#success').popup("close");
-                    }, 3500);
+                        $("#share").val(url + data.whence + "/" + path);
+
+                        setTimeout(function() {
+                            $('#success_timed').popup("open");
+                        }, 400);
+                    }
+                    else {
+                        setTimeout(function() {
+                            $('#success').popup("open");
+                        }, 400);
+
+                        setTimeout(function() {
+                            $('#success').popup("close");
+                        }, 3500);
+                    }
                 }
             });
         }
@@ -81,18 +92,26 @@
                 [% END %]
             </ul>
 
+        <div data-role="popup" id="success_timed" data-theme="a">
+            <ul data-role="listview" data-inset="true" style="min-width: 210px;" data-theme="b">
+                <li data-icon=false><a href="#">Share added</a></li>
+                <input type="text" id="share" value="" />
+                <li data-icon=false><a href="#" data-rel="back">Ok</a></li>
+            </ul>
+        </div>
+
         <div data-role="popup" id="success" data-theme="a">
             <ul data-role="listview" data-inset="true" style="min-width: 210px;" data-theme="b">
                 <li data-icon=false><a href="#">Share added</a></li>
+                <li data-icon=false><a href="#" data-rel="back">Ok</a></li>
             </ul>
         </div>
 
         <div data-role="popup" id="options" data-theme="a">
             <ul data-role="listview" data-inset="true" style="min-width: 210px;" data-theme="b">
                 <li data-role="divider" data-theme="a">Options</li>
-                <li data-icon=false><a href="#" onclick="addShare(); return false;">Share</a></li>
-                <li data-icon=false><a href="#" onclick="addPath(this, '/pls'); return true;">PLS File</a></li>
-                <li data-icon=false><a href="#" onclick="addPath(this, '/m3u'); return true;">M3U File</a></li>
+                <li data-icon=false><a href="#" onclick="addShare(0); return false;">Share</a></li>
+                <li data-icon=false><a href="#" onclick="addShare(1); return false;">Time Share</a></li>
                 <li data-icon=false><a href="#" onclick="addPath(this, '/audio'); return true;">HTML5 audio</a></li>
                 <li data-icon=false><a href="#" data-rel="back">Cancel</a></li>
             </ul>

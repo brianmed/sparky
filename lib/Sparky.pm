@@ -268,6 +268,7 @@ sub startup {
     $r->get('/dashboard/shares/audio/:selection/:mode' => {mode => 'html'})->to(controller => 'Public', action => 'audio');
     $r->get('/dashboard/shares/m3u/:selection')->to(controller => 'Public', action => 'm3u');
     $r->get('/dashboard/shares/:browse')->to(controller => 'Public', action => 'browse');
+    $r->get('/dashboard/shares/:whence/:browse')->to(controller => 'Public', action => 'browse');
 
     $is_admin->get('/dashboard/itunes')->to(controller => 'Dashboard', action => 'itunes');
     $is_admin->get('/dashboard/itunes/audio/:mode/:selection')->to(controller => 'Dashboard', action => 'audio');
@@ -280,6 +281,7 @@ sub startup {
 
     $is_admin->get('/dashboard/show')->to(controller => 'Dashboard', action => 'show');
     $is_admin->post('/show/userdir')->to(controller => 'Dashboard', action => 'userdir');
+    $is_admin->get('/add/share/#b64_path/:timed')->to(controller => 'Dashboard', action => 'add_share');
     $is_admin->get('/add/share/#b64_path')->to(controller => 'Dashboard', action => 'add_share');
     $is_admin->get('/del/share/#b64_path')->to(controller => 'Dashboard', action => 'del_share');
 

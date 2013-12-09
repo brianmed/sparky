@@ -15,7 +15,7 @@ sub shares {
     my @entries = ();
 
     my $dbx = SiteCode::DBX->new();
-    my $paths = $dbx->array("SELECT abs_path FROM share ORDER BY 1") || [];
+    my $paths = $dbx->array("SELECT abs_path FROM share WHERE timelimit is NULL ORDER BY 1") || [];
 
     foreach my $row (@$paths) {
         my $path = $$row{abs_path};
