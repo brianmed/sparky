@@ -1,118 +1,106 @@
 <!DOCTYPE html>
-<html>
-<head>
-<meta charset=utf-8 />
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>audio.js</title>
+    <meta content="width=device-width, initial-scale=0.6" name="viewport">
+    <style>
+      body { color: #666; font-family: sans-serif; line-height: 1.4; }
+      h1 { color: #444; font-size: 1.2em; padding: 14px 2px 12px; margin: 0px; }
+      h1 em { font-style: normal; color: #999; }
+      a { color: #888; text-decoration: none; }
+      #wrapper { width: 400px; margin: 40px auto; }
+      
+      ol { padding: 0px; margin: 0px; list-style: decimal-leading-zero inside; color: #ccc; width: 460px; border-top: 1px solid #ccc; font-size: 0.9em; }
+      ol li { position: relative; margin: 0px; padding: 9px 2px 10px; border-bottom: 1px solid #ccc; cursor: pointer; }
+      ol li a { display: block; text-indent: -3.3ex; padding: 0px 0px 0px 20px; }
+      li.playing { color: #aaa; text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.3); }
+      li.playing a { color: #000; }
+      li.playing:before { content: '♬'; width: 14px; height: 14px; padding: 3px; line-height: 14px; margin: 0px; position: absolute; left: -24px; top: 9px; color: #000; font-size: 13px; text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.2); }
+      
+      #shortcuts { position: fixed; bottom: 0px; width: 100%; color: #666; font-size: 0.9em; margin: 60px 0px 0px; padding: 20px 20px 15px; background: #f3f3f3; background: rgba(240, 240, 240, 0.7); }
+      #shortcuts div { width: 460px; margin: 0px auto; }
+      #shortcuts h1 { margin: 0px 0px 6px; }
+      #shortcuts p { margin: 0px 0px 18px; }
+      #shortcuts em { font-style: normal; background: #d3d3d3; padding: 3px 9px; position: relative; left: -3px;
+        -webkit-border-radius: 4px; -moz-border-radius: 4px; -o-border-radius: 4px; border-radius: 4px;
+        -webkit-box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1); -moz-box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1); -o-box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1); box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1); }
 
-<!-- Website Design By: www.happyworm.com -->
-<title>Demo : jPlayer as an audio playlist player</title>
-<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-<meta name="description" content="The CSS styleable jQuery media player plugin with HTML5 support!" />
-<meta name="keywords" content="jPlayer, jQuery, jQuery plugin, media, video, audio, media player, video player, audio player, mp3, mp4, m4a, m4v, aac, h264, ogg, oga, ogv, wav, webm" />
-<meta name="company" content="Happyworm" />
-<link href="/audio/jPlayer.css" rel="stylesheet" type="text/css" />
-<!--[if lt IE 9]>
-  <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-<![endif]-->
-<!--[if IE 6]>
-<link href="/css/ie6.css" rel="stylesheet" type="text/css" />
-<![endif]-->
-<link href="/audio/prettify-jPlayer.css" rel="stylesheet" type="text/css" />
-<link href="/audio/jplayer.blue.monday.css" rel="stylesheet" type="text/css" />
-<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-<script type="text/javascript" src="/audio/jquery.jplayer.js"></script>
-<script type="text/javascript" src="/audio/jplayer.playlist.min.js"></script>
-<script type="text/javascript">
-//<![CDATA[
-$(document).ready(function(){
+      @media screen and (max-device-width: 480px) {
+        #wrapper { position: relative; left: -3%; }
+        #shortcuts { display: none; }
+      }
+    </style>
+    <script src="/jquery.js"></script>
+    <script src="/audio/audio.min.js"></script>
+    <script>
+      $(function() { 
+        // Setup the player to autoplay the next track
+        var a = audiojs.createAll({
+          trackEnded: function() {
+            var next = $('ol li.playing').next();
+            if (!next.length) next = $('ol li').first();
+            next.addClass('playing').siblings().removeClass('playing');
+            audio.load($('a', next).attr('data-src'));
+            audio.play();
+          }
+        });
+        
+        // Load in the first track
+        var audio = a[0];
+            first = $('ol a').attr('data-src');
+        $('ol li').first().addClass('playing');
+        audio.load(first);
 
-	new jPlayerPlaylist({
-		jPlayer: "#jquery_jplayer_1",
-		cssSelectorAncestor: "#jp_container_1"
-	}, [
+        // Load in a track on click
+        $('ol li').click(function(e) {
+          e.preventDefault();
+          $(this).addClass('playing').siblings().removeClass('playing');
+          audio.load($('a', this).attr('data-src'));
+          audio.play();
+        });
+        // Keyboard shortcuts
+        $(document).keydown(function(e) {
+          var unicode = e.charCode ? e.charCode : e.keyCode;
+             // right arrow
+          if (unicode == 39) {
+            var next = $('li.playing').next();
+            if (!next.length) next = $('ol li').first();
+            next.click();
+            // back arrow
+          } else if (unicode == 37) {
+            var prev = $('li.playing').prev();
+            if (!prev.length) prev = $('ol li').last();
+            prev.click();
+            // spacebar
+          } else if (unicode == 32) {
+            audio.playPause();
+          }
+        })
+      });
+    </script>
+  </head>
+  <body>
+      [% IF playlist.size %]
+    <div id="wrapper">
+      <audio preload></audio>
+      <ol>
         [% FOREACH file IN playlist %]
-		{
-			title:"[% file.title %]",
-			[% file.ext %]:"[% file.src %]"
-        [% IF loop.last %]
-            }
-        [% ELSE %]
-            },
+        <li><a href="#" data-src="[% file.src %]">[% file.title | html %]</a></li>
         [% END %]
-        [% END %]
-        ], {
-playlistOptions: {
-    autoPlay: true
-    }});
-
-
-/*
-, {
-		wmode: "window",
-		smoothPlayBar: true,
-		keyEnabled: true
-	});
-*/
-});
-//]]>
-</script>
-</head>
-<body class="demo" onload="prettyPrint();">
-<script>
-    document.write('<a href="' + document.referrer + '">Go Back</a>');
-</script>
-|| <a href="/dashboard/browse">Go Home</a>
-<div id="container">
-
-	<div id="content_main">
-
-		<div id="jquery_jplayer_1" class="jp-jplayer"></div>
-
-		<div id="jp_container_1" class="jp-audio">
-			<div class="jp-type-playlist">
-				<div class="jp-gui jp-interface">
-					<ul class="jp-controls">
-						<li><a href="javascript:;" class="jp-previous" tabindex="1">previous</a></li>
-						<li><a href="javascript:;" class="jp-play" tabindex="1">play</a></li>
-						<li><a href="javascript:;" class="jp-pause" tabindex="1">pause</a></li>
-						<li><a href="javascript:;" class="jp-next" tabindex="1">next</a></li>
-						<li><a href="javascript:;" class="jp-stop" tabindex="1">stop</a></li>
-						<li><a href="javascript:;" class="jp-mute" tabindex="1" title="mute">mute</a></li>
-						<li><a href="javascript:;" class="jp-unmute" tabindex="1" title="unmute">unmute</a></li>
-						<li><a href="javascript:;" class="jp-volume-max" tabindex="1" title="max volume">max volume</a></li>
-					</ul>
-					<div class="jp-progress">
-						<div class="jp-seek-bar">
-							<div class="jp-play-bar"></div>
-						</div>
-					</div>
-					<div class="jp-volume-bar">
-						<div class="jp-volume-bar-value"></div>
-					</div>
-					<div class="jp-time-holder">
-						<div class="jp-current-time"></div>
-						<div class="jp-duration"></div>
-					</div>
-					<ul class="jp-toggles">
-						<li><a href="javascript:;" class="jp-shuffle" tabindex="1" title="shuffle">shuffle</a></li>
-						<li><a href="javascript:;" class="jp-shuffle-off" tabindex="1" title="shuffle off">shuffle off</a></li>
-						<li><a href="javascript:;" class="jp-repeat" tabindex="1" title="repeat">repeat</a></li>
-						<li><a href="javascript:;" class="jp-repeat-off" tabindex="1" title="repeat off">repeat off</a></li>
-					</ul>
-				</div>
-				<div class="jp-playlist">
-					<ul>
-						<li></li>
-					</ul>
-				</div>
-				<div class="jp-no-solution">
-					<span>Update Required</span>
-					To play the media you will need to either update your browser to a recent version or update your <a href="http://get.adobe.com/flashplayer/" target="_blank">Flash plugin</a>.
-				</div>
-			</div>
-		</div>
-	</div>
-</div>
-</body>
-<script type="text/javascript" src="/audio/prettify-jPlayer.js"></script>
-
+      </ol>
+    </div>
+    <div id="shortcuts">
+      <div>
+        <h1>Keyboard shortcuts:</h1>
+        <p><em>&rarr;</em> Next track</p>
+        <p><em>&larr;</em> Previous track</p>
+        <p><em>Space</em> Play/pause</p>
+      </div>
+    </div>
+    [% ELSE %]
+        Nothing found to play.
+    [% END %]
+  </body>
 </html>
+

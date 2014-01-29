@@ -1,22 +1,26 @@
 Time-limited shares
 
+Admin Uploads
+
+Guest Uploads
+
+    Size limits
+
+Transcoding video and audio
+
+*** Release ***
+
 Multi-User
 
 Tests
 
 Refactor /dashboard/browse and /dashboard/show
 
-Admin Uploads
-
 Guest access with shares (password protected)
 
 Add directory to sidebar.
 
 SSL
-
-Guest Uploads
-
-    Size limits
 
 *** Release ***
 

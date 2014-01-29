@@ -150,7 +150,7 @@ sub version {
     my $self = shift;
     
     # === START version
-    return("2013-10-22.001");
+    return("2014-01-28.035");
     # === STOP version
 }
 
@@ -171,6 +171,9 @@ sub is_admin {
     }
 
     my $id = SiteCode::Account->exists(username => $name);
+    if (!$id) {
+        return(undef);
+    }
     
     return(1 == $id);
 }
@@ -268,13 +271,12 @@ sub startup {
     $r->get('/dashboard/shares')->to(controller => 'Public', action => 'shares');
 
     $r->get('/dashboard/shares/pls/:selection')->to(controller => 'Public', action => 'pls');
-    $r->get('/dashboard/shares/audio/:selection/:mode' => {mode => 'html'})->to(controller => 'Public', action => 'audio');
+    $r->get('/dashboard/shares/audio/:selection')->to(controller => 'Public', action => 'audio');
     $r->get('/dashboard/shares/m3u/:selection')->to(controller => 'Public', action => 'm3u');
     $r->get('/dashboard/shares/:browse')->to(controller => 'Public', action => 'browse');
     $r->get('/dashboard/shares/:whence/:browse')->to(controller => 'Public', action => 'browse');
 
     $is_admin->get('/dashboard/itunes')->to(controller => 'Dashboard', action => 'itunes');
-    $is_admin->get('/dashboard/itunes/audio/:mode/:selection')->to(controller => 'Dashboard', action => 'audio');
     $is_admin->get('/dashboard/itunes/audio/:mode/:selection')->to(controller => 'Dashboard', action => 'audio');
     $is_admin->get('/dashboard/itunes/:type')->to(controller => 'Dashboard', action => 'itunes');
 

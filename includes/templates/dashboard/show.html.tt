@@ -23,7 +23,12 @@
             }, 3000);
         }
         function addShare(priv) {
-            $.getJSON("/add/share/" + path + "/timed", function( data ) {
+            var url = "/add/share/" + path;
+            if (priv) {
+                url = url + "/timed";
+            }
+
+            $.getJSON(url, function( data ) {
                 if (data.ret) {
                     $('#options').popup("close");
 
@@ -111,7 +116,7 @@
             <ul data-role="listview" data-inset="true" style="min-width: 210px;" data-theme="b">
                 <li data-role="divider" data-theme="a">Options</li>
                 <li data-icon=false><a href="#" onclick="addShare(0); return false;">Share</a></li>
-                <li data-icon=false><a href="#" onclick="addShare(1); return false;">Time Share</a></li>
+                <li data-icon=false><a href="#" onclick="addShare(1); return false;">One Hour Share</a></li>
                 <li data-icon=false><a href="#" onclick="addPath(this, '/audio'); return true;">HTML5 audio</a></li>
                 <li data-icon=false><a href="#" data-rel="back">Cancel</a></li>
             </ul>
@@ -168,11 +173,13 @@
                     </form>
                     [% END %]
 
+                    [% IF 0 %]
                     <form action="/show/userdir" method=post>
                         <input type=hidden name=method value=new_feed>
                         <input type="text" placeholder="[% placeholder %]" value="" name="entry.name" data-clear-btn="true" class="ui-input-text ui-body-c">
                         <input value="Browse" data-theme="b" type="submit">
                     </form>
+                    [% END %]
 
                     <hr>
                     <a href="/logout" data-role="button" data-theme="a" data-rel="external">Logout</a>

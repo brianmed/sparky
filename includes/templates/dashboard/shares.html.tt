@@ -41,7 +41,7 @@
 
     <div data-role="header">
         <a data-ajax=false id=goFetch href="/" data-icon="home">Home</a>
-        <h1><a href="/dashboard/shares" data-rel="external" data-ajax=false>Sparky [Guest]</a></h1>
+        <h1><a href="/dashboard/shares" data-rel="external" data-ajax=false>Sparky[% UNLESS h.is_admin %] [Guest][% END %]</a></h1>
         <a data-ajax=false id=goLogout href="/logout" data-icon="delete">Logout</a>
     </div><!-- /header -->
 
@@ -69,8 +69,8 @@
                 [% END %]
 
                 [% FOREACH entry IN entries %]
-                    <li><a data-ajax=false href="/dashboard/shares/[% entry.path %]">
-                    <h2>[% entry.name | html %]</h2>
+                    <li><a data-ajax=false href="/dashboard/shares/[% IF entry.timelimit %][% entry.timelimit %]/[% END %][% entry.path %]">
+                    <h2>[% entry.name | html %][% IF entry.timestring %] [[% entry.timestring | html %]][%END%]</h2>
                     <p>[% IF "file" == entry.type %] [% entry.size %] [% ELSE %] Directory [% END %]</p></a>
                         <a href="#options" data-rel="popup" data-position-to="window" data-transition="pop" onclick="path = '[% entry.path %]';">Link</a>
                     </li>

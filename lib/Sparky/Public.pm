@@ -15,12 +15,35 @@ sub shares {
     my @entries = ();
 
     my $dbx = SiteCode::DBX->new();
-    my $paths = $dbx->array("SELECT abs_path FROM share WHERE timelimit is NULL ORDER BY 1") || [];
 
+    my $paths = $dbx->array("SELECT abs_path FROM share WHERE timelimit is NULL ORDER BY 1") || [];
     foreach my $row (@$paths) {
         my $path = $$row{abs_path};
         my $entry = $self->phys_file_entry($path);
         push(@entries, $entry);
+    }
+
+    if ($self->is_admin) {
+        my @old = ();
+        my $now = time;
+
+        $paths = $dbx->array("SELECT id, abs_path, timelimit FROM share WHERE timelimit is NOT NULL ORDER BY 1") || [];
+        foreach my $row (@$paths) {
+            if ($now >= ($$row{timelimit} + 3600)) {
+                push(@old, $$row{id});
+            }
+            else {
+                my $path = $$row{abs_path};
+                my $entry = $self->phys_file_entry($path);
+                $entry->{timestring} = scalar(localtime($$row{timelimit}));
+                $entry->{timelimit} = $$row{timelimit};
+                push(@entries, $entry);
+            }
+        }
+
+        foreach my $id (@old) {
+            $dbx->do("DELETE FROM share WHERE id = ?", undef, $id);
+        }
     }
 
     foreach my $entry (@entries) {
@@ -91,12 +114,6 @@ sub audio {
     $selection = Mojo::Util::b64_decode($selection);
     $selection = Cwd::abs_path($selection);
     
-    my $mode = $self->param("mode");
-    return unless $mode;
-
-    $self->stash(playlist_url => $self->url_for({mode => 'playlist'})->to_abs);
-    return $self->render("dashboard/audio") unless "playlist" eq $mode;
-
     my @muzak = ();
     my $dbx = SiteCode::DBX->new();
     my $paths = $dbx->array("SELECT abs_path FROM share ORDER BY 1") || [];
@@ -118,31 +135,33 @@ sub audio {
         }
     }
 
-    my $xml = "<playlist>\n";
+    my @playlist = ();
     foreach my $file (@muzak) {
+        $file = Mojo::Util::url_unescape($file);
         my $muzak;
+        my $ext = "";
         if ($file =~ m/\.mp3/i) {
             $muzak = MP3::Info->new($file);
+            $ext = "mp3";
         }
         else {
             $muzak = MP4::Info->new($file);
+            $ext = "mp4";
         }
         my $b64 = Mojo::Util::b64_encode($file, "");
         my $src = $self->url_for("/dashboard/shares/$b64")->to_abs;
 
-        $xml .= sprintf(qq(
-            <track>
-                <title>%s</title>
-                <artist>%s</artist>
-                <mp3>%s</mp3>
-                <free>false</free>
-                <duration>%s</duration>
-            </track>
-        ), Mojo::Util::xml_escape($muzak->title), Mojo::Util::xml_escape($muzak->artist), Mojo::Util::xml_escape($src), Mojo::Util::xml_escape($muzak->time));
+        my $title = $muzak ? $muzak->title : $file;
+        unless ($muzak) {
+            $title =~ s#.*/##;
+            $title =~ s#.mp(3|4)##i;
+        }
+        $title =~ s#"#\\"#g;
+        push(@playlist, { title => $title, src => $src, ext => $ext });
     }
-    $xml .= "</playlist>\n";
+    $self->stash(playlist => \@playlist);
 
-    return $self->render(format => 'xml', text => $xml);
+    return $self->render("dashboard/audio");
 }
 
 sub m3u {
@@ -198,8 +217,16 @@ sub browse {
 
     my $entries = [];
 
+    my $whence = $self->param("whence");
+
     my $dbx = SiteCode::DBX->new();
-    my $paths = $dbx->array("SELECT abs_path FROM share ORDER BY 1") || [];
+    my $paths;
+    if ($whence) {
+        $paths = $dbx->array("SELECT abs_path FROM share WHERE timelimit = ? ORDER BY 1", undef, $whence) || [];
+    }
+    else {
+        $paths = $dbx->array("SELECT abs_path FROM share WHERE timelimit is NULL ORDER BY 1") || [];
+    }
 
     my $browse = $self->param("browse");
     $browse = Mojo::Util::b64_decode($browse);

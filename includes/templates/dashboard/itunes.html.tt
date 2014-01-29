@@ -153,11 +153,13 @@
                     </form>
                     [% END %]
 
+                    [% IF 0 %]
                     <form action="/show/userdir" method=post>
                         <input type=hidden name=method value=new_feed>
                         <input type="text" placeholder="[% placeholder %]" value="" name="entry.name" data-clear-btn="true" class="ui-input-text ui-body-c">
                         <input value="Browse" data-theme="b" type="submit">
                     </form>
+                    [% END %]
 
                     <hr>
                     <a href="/logout" data-role="button" data-theme="a" data-rel="external">Logout</a>

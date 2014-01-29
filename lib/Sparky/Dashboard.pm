@@ -383,7 +383,19 @@ sub audio {
         }
     }
     else {
-        push(@muzak, $selection);
+        # push(@muzak, $selection);
+        if (-f $selection) {
+            push(@muzak, $selection);
+        }
+        else {
+            opendir(my $dh, $selection) or die("error: opendir: $selection: $!\n");
+            while(readdir($dh)) {
+                next unless $_ =~ m/\.(mp3|m4a)$/i;
+                push(@muzak, "$selection/$_");
+            }
+            closedir($dh);
+            @muzak = sort({ $a cmp $b } @muzak);
+        }
     }
 
     my @playlist = ();
