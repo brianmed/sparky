@@ -59,6 +59,7 @@ tar -czf sparky.tgz includes
     --add "Sparky::Dashboard" \
     --add "Sparky::Public" \
     --add "File::HomeDir" \
+    --add "File::HomeDir::FreeDesktop" \
     --add "Crypt::Eksblowfish::Subkeyed" \
     --add "Compress::Zlib" \
 	--bind "entities.txt[file=lib/Mojo/entities.txt,extract]" \
@@ -78,6 +79,7 @@ tar -czf sparky.tgz includes
     --add "Sparky::Dashboard" \
     --add "Sparky::Public" \
     --add "File::HomeDir" \
+    --add "File::HomeDir::FreeDesktop" \
     --add "Crypt::Eksblowfish::Subkeyed" \
     --add "Compress::Zlib" \
 	--bind "entities.txt[file=lib/Mojo/entities.txt,extract]" \

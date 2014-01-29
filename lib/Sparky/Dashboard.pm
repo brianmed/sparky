@@ -377,13 +377,14 @@ sub audio {
     my $mode = $self->param("mode");
     return unless $mode;
 
-    my $music_dir = File::HomeDir->my_music;
-    my $xml_file = "$music_dir/iTunes/iTunes Music Library.xml";
-    my $albums = $self->_albums($xml_file);
     my @albums = ();
     my @muzak = ();
 
     if ("album" eq $mode) {
+        my $music_dir = File::HomeDir->my_music;
+        my $xml_file = "$music_dir/iTunes/iTunes Music Library.xml";
+        my $albums = $self->_albums($xml_file);
+
         foreach my $album (sort keys %$albums) {
             next unless $album eq $selection;
             foreach my $track (sort( {$a <=> $b} keys %{$$albums{$album}})) {
