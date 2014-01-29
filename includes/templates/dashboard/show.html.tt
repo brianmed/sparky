@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Sparky</title>
+    <title>[% cur_title | html %]</title>
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -73,7 +73,7 @@
 <div data-role="page" id=page_show class=ui-responsive-panel>
 
     <div data-role="header">
-        <h1><a href="/dashboard/browse" data-rel="external" data-ajax=false>[% cur_title %]</a></h1>
+        <h1><a href="/dashboard/browse" data-rel="external" data-ajax=false>[% cur_title | html%]</a></h1>
         <a href="#nav-panel" data-icon="bars" data-iconpos="notext">Menu</a>
         <a href="#profile-form" data-icon="plus" data-iconpos="notext">Proflie</a>
     </div><!-- /header -->

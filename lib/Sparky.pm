@@ -43,17 +43,19 @@ sub setup_valid {
     return($v);
 }
 
-sub phys_dir_listing {
-    my $self  = shift;
+sub phys_dir_listing { my $self  = shift;
     my $dir_name = shift;
 
     my @entries = ();
+
+    my ($dot, $dotdot);
 
     eval {
         my $opendir = $dir_name;
 
         opendir(my $dh, $opendir) or die("error: opendir: $opendir: $!");
-        while(readdir($dh)) {
+        my @files = readdir($dh);
+        foreach (sort @files) {
             my $file = $_;
 
             # next if "." eq $_;
@@ -66,16 +68,18 @@ sub phys_dir_listing {
             if ("." eq $file) {
                 my (undef, $dirname, undef) = File::Basename::fileparse($abs_path);
                 $$entry{name} = ". [$abs_path]";
+                $dot = $entry;
             }
             elsif (".." eq $file) {
                 $$entry{name} = "..";
+                $dotdot = $entry;
             }
             else {
                 my ($filename, undef, undef) = File::Basename::fileparse($abs_path);
                 $$entry{name} = $filename;
-            }
 
-            push(@entries, $entry);
+                push(@entries, $entry);
+            }
         }
         closedir($dh);
     };
@@ -84,6 +88,9 @@ sub phys_dir_listing {
         $self->app->log->debug($@);
         $self->flash("error" => $err);
     }
+
+    unshift(@entries, $dotdot) if $dotdot;
+    unshift(@entries, $dot) if $dot;
 
     return(\@entries);
 }
@@ -150,7 +157,7 @@ sub version {
     my $self = shift;
     
     # === START version
-    return("2014-01-29.080");
+    return("2014-01-29.105");
     # === STOP version
 }
 

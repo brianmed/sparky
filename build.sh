@@ -95,3 +95,32 @@ tar -czf sparky.tgz includes
 
 rm ~/Downloads/spark/sparky-win32.exe 
 cp -v app/sparky-win32.exe ~/Downloads/spark
+
+VER=$(/usr/local/ActivePerl-5.16/bin/perl -MPOSIX -ne 'if (/=== START/ .. /=== STOP/ and !/START|STOP/) { $r=qr/"(\d+-\d+-\d+)\.(\d+)"/; m/$r/; print("$1.$2\n");}' lib/Sparky.pm)
+VER="sparky-$VER"
+
+cd app
+mkdir "$VER"
+cd "$VER"
+
+cp ../INSTALL .
+cp ../INSTALL.txt .
+cp ../sparky-linux-x86-32 .
+cp ../sparky-linux-x86-64 .
+cp ../sparky-osx .
+cp ../sparky-win32.exe .
+
+cd ..
+rm sparky.zip
+zip sparky.zip "$VER"/*
+
+cd "$VER"
+rm ./INSTALL
+rm ./INSTALL.txt
+rm ./sparky-linux-x86-32
+rm ./sparky-linux-x86-64
+rm ./sparky-osx
+rm ./sparky-win32.exe
+
+cd ..
+rmdir "$VER"

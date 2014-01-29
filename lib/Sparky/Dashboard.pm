@@ -25,13 +25,15 @@ sub browse {
 
     my @paths = ();
 
+    my $home = File::HomeDir->my_home;
+
     push(@paths, File::HomeDir->my_home) if File::HomeDir->my_home;
-    push(@paths, File::HomeDir->my_desktop) if File::HomeDir->my_desktop;
-    push(@paths, File::HomeDir->my_documents) if File::HomeDir->my_documents;
-    push(@paths, File::HomeDir->my_music) if File::HomeDir->my_music;
-    push(@paths, File::HomeDir->my_pictures) if File::HomeDir->my_pictures;
-    push(@paths, File::HomeDir->my_videos) if File::HomeDir->my_videos;
-    push(@paths, File::HomeDir->my_data) if File::HomeDir->my_data;
+    push(@paths, File::HomeDir->my_desktop) if File::HomeDir->my_desktop && $home ne File::HomeDir->my_desktop;
+    push(@paths, File::HomeDir->my_documents) if File::HomeDir->my_documents  && $home ne File::HomeDir->my_documents;
+    push(@paths, File::HomeDir->my_music) if File::HomeDir->my_music && $home ne File::HomeDir->my_music;
+    push(@paths, File::HomeDir->my_pictures) if File::HomeDir->my_pictures && $home ne File::HomeDir->my_pictures;
+    push(@paths, File::HomeDir->my_videos) if File::HomeDir->my_videos && $home ne File::HomeDir->my_videos;
+    push(@paths, File::HomeDir->my_data) if File::HomeDir->my_data && $home ne File::HomeDir->my_data;
 
     if ("darwin" eq $^O) {
         push(@paths, "/");
@@ -113,7 +115,39 @@ sub findme {
     $user->key("_t_entries", $self->dumper($entries));
     $self->flash("entry.name", "Browse");
 
-    $self->redirect_to($url);
+    # $self->redirect_to($url);
+
+    ## hack OMG
+    # if ($self->flash("entry.name")) {
+        $self->stash(error => $self->flash("error")) if $self->flash("error");
+        # $self->stash(entry_name => $self->flash("entry.name"));
+        $self->stash(entry_name => "Browse");
+    
+        $user = SiteCode::Account->new(route => $self, username => $self->session->{have_user});
+        $entries = eval($user->key("_t_entries"));
+        $self->stash(entries => $entries);
+        $self->stash(have_files => scalar(@$entries));
+        $user->key("_t_entries", undef);
+        # }
+
+    $self->stash(cur_title => "Sparky: " . ($path ? $path : "Dashboard"));
+
+    my $home;
+    if ("darwin" eq $^O) {
+        $home = $ENV{HOME};
+    }
+    elsif ("MSWin32" eq $^O) {
+        $home = "$ENV{HOMEDRIVE}$ENV{HOMEPATH}";
+    }
+    elsif ("linux" eq $^O) {
+        $home = $ENV{HOME};
+    }
+    
+    $self->stash(placeholder => $home);
+    $self->stash(version => $self->version);
+
+    $self->render("dashboard/show");
+    ##
 
     return;
 };
@@ -139,7 +173,7 @@ sub show {
         $user->key("_t_entries", undef);
     }
 
-    $self->stash(cur_title => "Sparky");
+    $self->stash(cur_title => "Sparky: Dashboard");
 
     my $home;
     if ("darwin" eq $^O) {
