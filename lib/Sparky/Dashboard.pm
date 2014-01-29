@@ -98,6 +98,7 @@ sub findme {
         return;
     }
 
+    $path =~ s#^/## if $^O eq "MSWin32";
     my $entries = $self->phys_dir_listing($path);
 
     foreach my $entry (@{$entries}) {
@@ -377,6 +378,7 @@ sub audio {
             foreach my $track (sort( {$a <=> $b} keys %{$$albums{$album}})) {
                 my $l = $$albums{$album}{$track}{Location};
                 $l =~ s#file://localhost##;
+                $l =~ s#^/## if $^O eq "MSWin32";
 
                 push(@muzak, $l);
             }
@@ -388,7 +390,7 @@ sub audio {
             push(@muzak, $selection);
         }
         else {
-            opendir(my $dh, $selection) or die("error: opendir: $selection: $!\n");
+            opendir(my $dh, $selection) or die("error: opendir: $selection: $!");
             while(readdir($dh)) {
                 next unless $_ =~ m/\.(mp3|m4a)$/i;
                 push(@muzak, "$selection/$_");

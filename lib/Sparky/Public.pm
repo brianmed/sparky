@@ -80,7 +80,7 @@ sub pls {
                 push(@muzak, $selection);
             }
             else {
-                opendir(my $dh, $selection) or die("error: opendir: $selection: $!\n");
+                opendir(my $dh, $selection) or die("error: opendir: $selection: $!");
                 while(readdir($dh)) {
                     next unless $_ =~ m/\.(mp3|m4a)$/i;
                     push(@muzak, "$selection/$_");
@@ -124,7 +124,7 @@ sub audio {
                 push(@muzak, $selection);
             }
             else {
-                opendir(my $dh, $selection) or die("error: opendir: $selection: $!\n");
+                opendir(my $dh, $selection) or die("error: opendir: $selection: $!");
                 while(readdir($dh)) {
                     next unless $_ =~ m/\.(mp3|m4a)$/i;
                     push(@muzak, "$selection/$_");
@@ -189,7 +189,7 @@ sub m3u {
                 push(@muzak, $selection);
             }
             else {
-                opendir(my $dh, $selection) or die("error: opendir: $selection: $!\n");
+                opendir(my $dh, $selection) or die("error: opendir: $selection: $!");
                 while(readdir($dh)) {
                     next unless $_ =~ m/\.(mp3|m4a)$/i;
                     push(@muzak, "$selection/$_");
@@ -219,18 +219,23 @@ sub browse {
 
     my $whence = $self->param("whence");
 
+    my $browse = $self->param("browse");
+    $browse = Mojo::Util::b64_decode($browse);
+    $browse = Cwd::abs_path($browse);
+
     my $dbx = SiteCode::DBX->new();
     my $paths;
     if ($whence) {
         $paths = $dbx->array("SELECT abs_path FROM share WHERE timelimit = ? ORDER BY 1", undef, $whence) || [];
     }
     else {
-        $paths = $dbx->array("SELECT abs_path FROM share WHERE timelimit is NULL ORDER BY 1") || [];
+        if ($browse) {
+            $paths = $dbx->array("SELECT abs_path FROM share ORDER BY 1") || [];
+        }
+        else {
+            $paths = $dbx->array("SELECT abs_path FROM share WHERE timelimit is NULL ORDER BY 1") || [];
+        }
     }
-
-    my $browse = $self->param("browse");
-    $browse = Mojo::Util::b64_decode($browse);
-    $browse = Cwd::abs_path($browse);
 
     foreach my $row (@$paths) {
         my $path = $$row{abs_path};

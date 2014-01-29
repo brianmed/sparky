@@ -42,6 +42,9 @@ tar -czf sparky.tgz includes
 	--exe app/sparky-win32.exe \
 	script/sparky
 
+rm ~/Downloads/spark/sparky-win32.exe 
+cp -v app/sparky-win32.exe ~/Downloads/spark
+
 /usr/local/PDK/bin/perlapp \
 	--add "Mojo::;Mojolicious::;Sparky::;B::Hooks::EndOfScope::" \
     --add "Sparky::Index" \

@@ -52,7 +52,7 @@ sub phys_dir_listing {
     eval {
         my $opendir = $dir_name;
 
-        opendir(my $dh, $opendir) or die("error: opendir: $opendir: $!\n");
+        opendir(my $dh, $opendir) or die("error: opendir: $opendir: $!");
         while(readdir($dh)) {
             my $file = $_;
 
@@ -150,7 +150,7 @@ sub version {
     my $self = shift;
     
     # === START version
-    return("2014-01-28.035");
+    return("2014-01-28.043");
     # === STOP version
 }
 
