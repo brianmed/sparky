@@ -22,6 +22,19 @@
                 $('#options').popup("close");
             }, 3000);
         }
+        function urlDialog(h) {
+            var url = '[% h.url_for("/dashboard/shares").to_abs %]' + '/video/' + path;
+
+            $("#copy_url").val(url);
+
+            setTimeout(function() {
+                $('#options').popup("close");
+            }, 100);
+
+            setTimeout(function() {
+                $('#success_url').popup("open");
+            }, 300);
+        }
         function addShare(priv) {
             var url = "/add/share/" + path;
             if (priv) {
@@ -97,6 +110,14 @@
                 [% END %]
             </ul>
 
+        <div data-role="popup" id="success_url" data-theme="a">
+            <ul data-role="listview" data-inset="true" style="min-width: 210px;" data-theme="b">
+                <li data-icon=false><a href="#">URL</a></li>
+                <input type="text" id="copy_url" value="" />
+                <li data-icon=false><a href="#" data-rel="back">Ok</a></li>
+            </ul>
+        </div>
+
         <div data-role="popup" id="success_timed" data-theme="a">
             <ul data-role="listview" data-inset="true" style="min-width: 210px;" data-theme="b">
                 <li data-icon=false><a href="#">Share added</a></li>
@@ -118,6 +139,8 @@
                 <li data-icon=false><a href="#" onclick="addShare(0); return false;">Share</a></li>
                 <li data-icon=false><a href="#" onclick="addShare(1); return false;">One Hour Share</a></li>
                 <li data-icon=false><a href="#" onclick="addPath(this, '/audio'); return true;">HTML5 audio</a></li>
+                <!-- <li data-icon=false><a href="#" onclick="addPath(this, '/ogv'); return true;">OGG Transcode</a></li> -->
+                <li data-icon=false><a href="#" onclick="urlDialog(this); return true;">URL</a></li>
                 <li data-icon=false><a href="#" data-rel="back">Cancel</a></li>
             </ul>
         </div>

@@ -12,6 +12,8 @@ use Mac::iTunes::Library::Item;
 use Mac::iTunes::Library::XML;
 use MP3::Info;
 use MP4::Info;
+use Mojo::IOLoop::ForkCall;
+use File::Spec;
 
 sub browse {
     my $self = shift;
@@ -83,11 +85,13 @@ sub findme {
         $self->app->types->type(mp4 => 'video/x-m4v');
         $self->app->types->type(mpg => 'video/mpg');
         $self->app->types->type(mpeg => 'video/mpeg');
+        $self->app->types->type(mov => 'video/quicktime');
+
         # $self->render_file('filepath' => $path);
         # $self->render_static($path);
 
         $path =~ m#\.(\w+)#;
-        my $format = $1 || "pdf";
+        my $format = $1 || "txt";
 
         $self->render_file(
             'filepath' => $path,
@@ -193,6 +197,7 @@ sub add_share {
 sub del_share {
     my $self = shift;
 
+    my $whence = $self->param("whence");
     my $b64_path = $self->param("b64_path");
     my $path = Mojo::Util::b64_decode($b64_path);
     my $abs = Cwd::abs_path($path);
@@ -200,7 +205,13 @@ sub del_share {
     my $ret = 0;
     eval {
         my $dbx = SiteCode::DBX->new();
-        $dbx->do("DELETE FROM share WHERE abs_path = ?", undef, $abs);
+
+        if ($whence) {
+            $dbx->do("DELETE FROM share WHERE abs_path = ? AND timelimit = ?", undef, $abs, $whence);
+        }
+        else {
+            $dbx->do("DELETE FROM share WHERE abs_path = ?", undef, $abs);
+        }
         $ret = 1;
     };
     if ($@) {
@@ -428,6 +439,122 @@ sub audio {
     $self->stash(playlist => \@playlist);
 
     return $self->render("dashboard/audio");
+}
+
+sub video {
+    my $self = shift;
+
+    my $mode = $self->param("mode");
+    return unless $mode;
+
+    my $selection = $self->param("selection");
+    return unless $selection;
+    my $decoded = Mojo::Util::b64_decode($selection);
+    
+    if (-f $decoded) {
+        my $src = $self->url_for("/dashboard/browse/video/$selection/transcode")->to_abs;
+        $self->stash(src => $src);
+    }
+
+    if ("html" eq $mode) {
+        return $self->render("dashboard/video");
+    }
+
+    # transcode
+    # ./ffmpeg/ffmpeg-osx -i movie.avi -acodec libmp3lame -vcodec libx264
+    my $bin = $self->ffmpeg_bin;
+    # my @cmd = ($bin, "-i", $decoded, "-acodec", "libmp3lame", "-vcodec", "libx264", "-f", "m4v", "-");
+
+###     my $tmp = File::Spec->tmpdir();
+###     mkdir("$tmp/sparky") unless -d "$tmp/sparky";
+###     mkdir("$tmp/sparky/transcode") unless -d "$tmp/sparky/transcode";
+###     my $dir = $self->stash->{_dir} = "$tmp/sparky/transcode";
+### 
+###     opendir(my $dh, $dir) or die("error: opendir: $dir: $!");
+###     my @files = grep { /stream/ && -f "$dir/$_" } readdir($dh);
+###     foreach my $file (@files) {
+###         unlink("$dir/$file");
+###     }
+###     closedir($dh);
+### 
+###     $self->forkcall->run(
+###         sub {   
+###             my $dir = $self->stash->{_dir};
+###             my @cmd = ($bin);
+###             push(@cmd, "-i", $decoded, "-async", "1", "-ss", "00:00:05", "-strict", "-2", "-acodec", "aac");
+###             push(@cmd, "-b:v", "3000k", "-ac", "2", "-vcodec", "libx264", "-preset", "superfast", "-tune", "zerolatency", "-threads", "2", "-s", "1280x720");
+###             push(@cmd, "-flags", "-global_header", "-map", "0:0", "-map", "0:1", "-f", "segment", "-segment_time", "10", "-segment_list", "$dir/stream.m3u8");
+###             push(@cmd, "-segment_format", "mpegts", "-segment_wrap", "10", "-segment_list_size", "6", "-segment_list_flags", "live", "$dir/stream%03d.ts");
+### 
+###             warn(join(" ", @cmd));
+###             open(my $fh, "-|", @cmd) or die("error: open: ffmepg: $bin: $!");
+###             while(<$fh>) {
+###                 warn($_);
+###             }
+###             close($fh);
+###             my @cmd = ($bin, "-i", $decoded, "-acodec", "libmp3lame", "-vcodec", "libx264", "-f", "m4v", "-");
+###         },
+###         sub { 
+###             my ($fc, $err, $ret) = @_;
+### 
+###             $self->stash->{_dir} = undef;
+###         },
+###         
+###     );
+### 
+###     foreach my $i (1 .. 10) {
+###         my $dir = $self->stash->{_dir};
+###         last if -f "$dir/stream.m3u8";
+###         sleep 2;
+###     }
+### 
+###     if (-f "$dir/stream.m3u8") {
+###         $self->app->types->type(mpeg => 'video/MP2T');
+###         $self->render_file('filepath' => "$dir/stream.m3u8");
+###     }
+###     else {
+###         $self->render(text => "No stream created.\n");
+###     }
+
+    $self->res->headers->content_type('video/ogg');
+    # my @cmd = ($bin, "-i", $decoded, "-acodec", "libmp3lame", "-vcodec", "libx264", "-f", "m4v", "-");
+    my @cmd = ($bin, "-i", $decoded, "-strict", "-2", "-acodec", "libvorbis", "-vcodec", "libtheora", "-f", "ogg", "-");
+    open(my $ffmpeg_fh, "-|", @cmd) or die("error: ffmpeg: $bin: $!");
+    binmode($ffmpeg_fh);
+    my $buf;
+    while (0 != read($ffmpeg_fh,$buf,2048)) {
+        $self->write_chunk($buf);
+    }
+    close($ffmpeg_fh);
+    $self->finish;
+}
+
+sub ogv {
+    my $self = shift;
+
+    my $mode = $self->param("mode");
+    return unless $mode;
+
+    my $selection = $self->param("selection");
+    return unless $selection;
+    my $decoded = Mojo::Util::b64_decode($selection);
+    
+    if (-f $decoded) {
+        $self->res->headers->content_type('video/ogg');
+        $self->render_later;
+
+        my $bin = $self->ffmpeg_bin;
+        my @cmd = ($bin, "-i", $decoded, "-strict", "-2", "-acodec", "libvorbis", "-vcodec", "libtheora", "-f", "ogg", "-");
+
+        open(my $ffmpeg_fh, "-|", @cmd) or die("error: ffmpeg: $bin: $!");
+        binmode($ffmpeg_fh);
+        my $buf;
+        while (0 != read($ffmpeg_fh,$buf,2048)) {
+            $self->write_chunk($buf);
+        }
+        close($ffmpeg_fh);
+        $self->finish;
+    }
 }
 
 1;

@@ -150,7 +150,7 @@ sub version {
     my $self = shift;
     
     # === START version
-    return("2014-01-28.043");
+    return("2014-01-29.078");
     # === STOP version
 }
 
@@ -178,6 +178,13 @@ sub is_admin {
     return(1 == $id);
 }
 
+sub forkcall {
+    my $self = shift;
+
+    state $fc = Mojo::IOLoop::ForkCall->new;
+}
+    
+
 sub startup {
     my $self = shift;
     
@@ -190,9 +197,12 @@ sub startup {
     $self->helper(version => \&version);
     $self->helper(uname => \&uname);
     $self->helper(is_admin => \&is_admin);
+    $self->helper(forkcall => \&forkcall);
 
     warn("Version: " . $self->version, "\n");
     warn("Uname: " . $self->uname, "\n");
+
+    my $ffmpeg_bin;
 
     if ($PerlApp::VERSION) {
         my $datafile = "sparky.tgz";
@@ -202,6 +212,15 @@ sub startup {
         my $tar = Archive::Tar->new;
 
         my $dirname = File::Basename::dirname($filename);
+
+        if ("darwin" eq $^O) {
+            $ffmpeg_bin = "$dirname/ffmpeg/ffmpeg-osx";
+        }
+        elsif ("MSWin32" eq $^O) {
+            $ffmpeg_bin = "$dirname/ffmpeg/ffmpeg-win32.exe";
+        }
+        elsif ("linux" eq $^O) {
+        }
 
         $tar->setcwd($dirname);
         $tar->read($filename);
@@ -214,6 +233,8 @@ sub startup {
         push(@{$self->renderer->paths}, "includes/templates");
         push(@{$self->static->paths}, "includes/public");
     }
+
+    $self->helper(ffmpeg_bin => sub { $ffmpeg_bin });
 
     my $site_config = SiteCode::Site->config();
 
@@ -273,6 +294,12 @@ sub startup {
     $r->get('/dashboard/shares/pls/:selection')->to(controller => 'Public', action => 'pls');
     $r->get('/dashboard/shares/audio/:selection')->to(controller => 'Public', action => 'audio');
     $r->get('/dashboard/shares/m3u/:selection')->to(controller => 'Public', action => 'm3u');
+    $r->get('/dashboard/shares/pls/:whence/:selection')->to(controller => 'Public', action => 'pls');
+    $r->get('/dashboard/shares/audio/:whence/:selection')->to(controller => 'Public', action => 'audio');
+    $r->get('/dashboard/shares/m3u/:whence/:selection')->to(controller => 'Public', action => 'm3u');
+    # $r->get('/dashboard/shares/ogv/:selection/:mode' => {mode => 'html'})->to(controller => 'Public', action => 'ogv');
+    # $r->get('/dashboard/shares/ogv/:whence/:selection/:mode' => {mode => 'html'})->to(controller => 'Public', action => 'ogv');
+
     $r->get('/dashboard/shares/:browse')->to(controller => 'Public', action => 'browse');
     $r->get('/dashboard/shares/:whence/:browse')->to(controller => 'Public', action => 'browse');
 
@@ -282,6 +309,8 @@ sub startup {
 
     $is_admin->get('/dashboard/browse')->to(controller => 'Dashboard', action => 'browse');
     $is_admin->get('/dashboard/browse/audio/:selection/:mode' => {mode => 'html'})->to(controller => 'Dashboard', action => 'audio');
+    $is_admin->get('/dashboard/browse/video/:selection/:mode' => {mode => 'html'})->to(controller => 'Dashboard', action => 'video');
+    # $is_admin->get('/dashboard/browse/ogv/:selection/:mode' => {mode => 'html'})->to(controller => 'Dashboard', action => 'ogv');
     $is_admin->get('/dashboard/browse/:findme')->to(controller => 'Dashboard', action => 'findme');
 
     $is_admin->get('/dashboard/show')->to(controller => 'Dashboard', action => 'show');
@@ -289,6 +318,7 @@ sub startup {
     $is_admin->get('/add/share/#b64_path/:timed')->to(controller => 'Dashboard', action => 'add_share');
     $is_admin->get('/add/share/#b64_path')->to(controller => 'Dashboard', action => 'add_share');
     $is_admin->get('/del/share/#b64_path')->to(controller => 'Dashboard', action => 'del_share');
+    $is_admin->get('/del/share/:whence/#b64_path')->to(controller => 'Dashboard', action => 'del_share');
 
     $is_admin->any('/add/user')->to(controller => 'Index', action => 'add_user');
 }

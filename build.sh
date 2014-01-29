@@ -3,6 +3,7 @@
 /usr/local/ActivePerl-5.16/bin/perl -MPOSIX -p -i -e '$t=POSIX::strftime("%Y-%m-%d", localtime); if (/=== START/ .. /=== STOP/ and !/START|STOP/) { $r=qr/"(\d+-\d+-\d+)\.(\d+)"/; m/$r/; $d=$1; $n=$2; $day{$d} = $n; $day{$t}++; $day{$t} = sprintf("%03d", $day{$t}); s/$r/"$t.$day{$t}"/; }' lib/Sparky.pm
 
 \rm -f sparky.tgz
+# tar -czf sparky.tgz includes ffmpeg/ffmpeg-osx
 tar -czf sparky.tgz includes
 
 /usr/local/PDK/bin/perlapp \
@@ -22,6 +23,10 @@ tar -czf sparky.tgz includes
 	--clean \
 	--exe app/sparky-osx \
 	script/sparky
+
+\rm -f sparky.tgz
+# tar -czf sparky.tgz includes ffmpeg/ffmpeg-win32.exe
+tar -czf sparky.tgz includes
 
 /usr/local/PDK/bin/perlapp \
 	--add "Mojo::;Mojolicious::;Sparky::;B::Hooks::EndOfScope::" \
@@ -44,6 +49,9 @@ tar -czf sparky.tgz includes
 
 rm ~/Downloads/spark/sparky-win32.exe 
 cp -v app/sparky-win32.exe ~/Downloads/spark
+
+\rm -f sparky.tgz
+tar -czf sparky.tgz includes
 
 /usr/local/PDK/bin/perlapp \
 	--add "Mojo::;Mojolicious::;Sparky::;B::Hooks::EndOfScope::" \

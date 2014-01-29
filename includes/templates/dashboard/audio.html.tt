@@ -83,7 +83,7 @@
   <body>
       [% IF playlist.size %]
     <div id="wrapper">
-      <audio preload></audio>
+      <audio preload autoplay></audio>
       <ol>
         [% FOREACH file IN playlist %]
         <li><a href="#" data-src="[% file.src %]">[% file.title | html %]</a></li>
@@ -102,5 +102,3 @@
         Nothing found to play.
     [% END %]
   </body>
-</html>
-

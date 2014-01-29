@@ -22,6 +22,19 @@
                 $('#options').popup("close");
             }, 3000);
         }
+        function urlDialog(h) {
+            var url = '[% h.url_for("/dashboard/shares/").to_abs %]' + path;
+
+            $("#copy_url").val(url);
+
+            setTimeout(function() {
+                $('#options').popup("close");
+            }, 100);
+
+            setTimeout(function() {
+                $('#success_url').popup("open");
+            }, 300);
+        }
         function delShare() {
             $.getJSON("/del/share/" + path, function( data ) {
                 if (data.ret) {
@@ -72,10 +85,18 @@
                     <li><a data-ajax=false href="/dashboard/shares/[% IF entry.timelimit %][% entry.timelimit %]/[% END %][% entry.path %]">
                     <h2>[% entry.name | html %][% IF entry.timestring %] [[% entry.timestring | html %]][%END%]</h2>
                     <p>[% IF "file" == entry.type %] [% entry.size %] [% ELSE %] Directory [% END %]</p></a>
-                        <a href="#options" data-rel="popup" data-position-to="window" data-transition="pop" onclick="path = '[% entry.path %]';">Link</a>
+                        <a href="#options" data-rel="popup" data-position-to="window" data-transition="pop" onclick="path = '[% IF entry.timelimit %][% entry.timelimit %]/[% END %][% entry.path %]';">Link</a>
                     </li>
                 [% END %]
             </ul>
+
+        <div data-role="popup" id="success_url" data-theme="a">
+            <ul data-role="listview" data-inset="true" style="min-width: 210px;" data-theme="b">
+                <li data-icon=false><a href="#">URL</a></li>
+                <input type="text" id="copy_url" value="" />
+                <li data-icon=false><a href="#" data-rel="back">Ok</a></li>
+            </ul>
+        </div>
 
         <div data-role="popup" id="options" data-theme="a">
             <ul data-role="listview" data-inset="true" style="min-width: 210px;" data-theme="b">
@@ -83,6 +104,8 @@
                 <li data-icon=false><a href="/dashboard/shares/" onclick="addPath(this, '/pls'); return true;">PLS File</a></li>
                 <li data-icon=false><a href="/dashboard/shares/" onclick="addPath(this, '/m3u'); return true;">M3U File</a></li>
                 <li data-icon=false><a href="/dashboard/shares/" onclick="addPath(this, '/audio'); return true;">HTML5 audio</a></li>
+                <!-- <li data-icon=false><a href="/dashboard/shares/" onclick="addPath(this, '/ogv'); return true;">OGG Transcode</a></li> -->
+                <li data-icon=false><a href="#" onclick="urlDialog(this); return true;">URL</a></li>
                 [% IF c.session.have_user %]
                 <li data-icon=false><a href="#" onclick="delShare(); return false;">Remove</a></li>
                 [% END %]

@@ -241,7 +241,20 @@ sub browse {
         my $path = $$row{abs_path};
         if ($self->container_valid(path => $browse, container => $path)) {
             if (-f $browse) {
-                $self->render_file('filepath' => $browse);
+                $browse =~ m#\.(\w+)#;
+                my $format = $1;
+
+                $self->app->types->type(mp4 => 'video/x-m4v');
+                $self->app->types->type(mpg => 'video/mpg');
+                $self->app->types->type(mpeg => 'video/mpeg');
+                $self->app->types->type(mov => 'video/quicktime');
+
+                $self->render_file(
+                    'filepath' => $browse,
+                    'format' => $format,
+                    'content_disposition' => 'inline',   # will change Content-Disposition from "attachment" to "inline"
+                );
+                # $self->render_file('filepath' => $browse);
                 return;
             }
             else {
@@ -261,6 +274,38 @@ sub browse {
     $self->stash(have_files => scalar(@$entries));
 
     return $self->render("dashboard/shares");
+}
+
+sub ogv {
+    my $self = shift;
+
+    my $mode = $self->param("mode");
+    return unless $mode;
+
+    my $selection = $self->param("selection");
+    return unless $selection;
+    my $decoded = Mojo::Util::b64_decode($selection);
+    
+    if (-f $decoded) {
+        my $src = $self->url_for("/dashboard/shares/ogv/$selection/transcode")->to_abs;
+        $self->stash(src => $src);
+
+        $self->res->headers->content_type('video/ogg');
+
+        $self->render_later;
+
+        my $bin = $self->ffmpeg_bin;
+        my @cmd = ($bin, "-i", $decoded, "-strict", "-2", "-acodec", "libvorbis", "-vcodec", "libtheora", "-f", "ogg", "-");
+
+        open(my $ffmpeg_fh, "-|", @cmd) or die("error: ffmpeg: $bin: $!");
+        binmode($ffmpeg_fh);
+        my $buf;
+        while (0 != read($ffmpeg_fh,$buf,2048)) {
+            $self->write_chunk($buf);
+        }
+        close($ffmpeg_fh);
+        $self->finish;
+    }
 }
 
 1;
