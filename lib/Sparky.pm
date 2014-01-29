@@ -4,6 +4,8 @@ use Mojo::Base 'Mojolicious';
 
 use SiteCode::Account;
 use SiteCode::Site;
+use Compress::Zlib;
+use IO::Zlib qw(:gzip_external 0);
 use Archive::Tar;
 use File::Basename;
 use Mojo::Util;
@@ -147,7 +149,9 @@ sub container_valid {
 sub version {
     my $self = shift;
     
+    # === START version
     return("2013-10-22.001");
+    # === STOP version
 }
 
 sub uname {
@@ -192,7 +196,6 @@ sub startup {
         my $filename = PerlApp::extract_bound_file($datafile);
         die "$datafile not bound to application\n" unless defined $filename;
 
-        use Archive::Tar;
         my $tar = Archive::Tar->new;
 
         my $dirname = File::Basename::dirname($filename);
