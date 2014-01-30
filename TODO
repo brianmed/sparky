@@ -4,15 +4,29 @@ Guest Uploads
 
     Size limits
 
-Transcoding video and audio
+Tests
+
+Refactor /dashboard/browse and /dashboard/show
+
+Download entire folder - zip file or tar.gz file
+
+Integrations
+
+    Flickr
+    Instagram
+    Box
+    Dropbox
+    iTunes
+
+?Transcoding video and audio?
+
+Create and play a slideshow with or without music.
+
+Photo albums
 
 *** Release ***
 
 Multi-User
-
-Tests
-
-Refactor /dashboard/browse and /dashboard/show
 
 Guest access with shares (password protected)
 
@@ -26,25 +40,7 @@ DLNA Media Server
 
 ----
 
-Create and play a slideshow with or without music.
-
-Photo albums
-
 WebDAV
-
-iTunes
-
-Context menu - 1 click file share
-
-Download entire folder - zip file or tar.gz file
-
-Integrations
-
-    Flickr
-    Instagram
-    Box
-    Dropbox
-    iTunes
 
 Sync
 

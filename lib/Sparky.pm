@@ -157,7 +157,7 @@ sub version {
     my $self = shift;
     
     # === START version
-    return("2014-01-29.105");
+    return("2014-01-29.111");
     # === STOP version
 }
 

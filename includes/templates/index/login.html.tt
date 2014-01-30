@@ -71,7 +71,7 @@
                 </div>
 
             <div class="ui-grid-a">
-                <div class="ui-block-a"><label><input data-mini="true" type="checkbox" name="hour_session" [% IF hour_session %] checked [% END %]/>Quick login</label></div>
+                <div class="ui-block-a"><label><input data-mini="true" type="checkbox" name="hour_session" [% IF hour_session %] checked [% END %]/>1h Login</label></div>
                 <div class="ui-block-b"><a href="/dashboard/shares" data-role="button" data-theme="b" rel="dialog" data-mini="true">Public Files</a></div>
             </div>
 
