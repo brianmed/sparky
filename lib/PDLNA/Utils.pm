@@ -208,6 +208,7 @@ sub encode_xml
 	$string = $xs->escape_value($string);
 	$string =~ s/&/&amp;/g; # double encoding of ampersand: http://sourceforge.net/p/minidlna/bugs/198/
 	#$string =~ s/'/&apos;/g; # single qoutes are not encoded by XML::Simple, do we need it ?
+    chomp($string);
 
 	return $string;
 }

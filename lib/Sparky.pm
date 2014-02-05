@@ -8,7 +8,7 @@ use Compress::Zlib;
 use IO::Zlib qw(:gzip_external 0);
 use Archive::Tar;
 use File::Basename;
-use Mojo::Util;
+use Mojo::Util qw(b64_encode b64_decode);
 use Fcntl qw(:mode);
 use Cwd;
 use POSIX qw();
@@ -18,6 +18,7 @@ use IO::Select;
 use Net::Netmask;
 use Socket;
 use XML::Simple;
+use File::MimeInfo;
 
 use PDLNA::Config;
 use PDLNA::ContentLibrary;
@@ -174,7 +175,7 @@ sub version {
     my $self = shift;
     
     # === START version
-    return("2014-02-05.010");
+    return("2014-02-05.066");
     # === STOP version
 }
 
@@ -233,10 +234,10 @@ sub pdlna {
 
 	PDLNA::Database::initialize_db();
 
-    PDLNA::ContentLibrary::index_directories_thread;
-	my $id = Mojo::IOLoop->recurring(3600 => sub {
-            PDLNA::ContentLibrary::index_directories_thread;
-	});
+###     PDLNA::ContentLibrary::index_directories_thread;
+### 	my $id = Mojo::IOLoop->recurring(3600 => sub {
+###             PDLNA::ContentLibrary::index_directories_thread;
+### 	});
 
 	$self->app->ssdp->add_send_socket(); # add the socket for sending SSDP messages
 	$self->app->ssdp->add_receive_socket(); # add the socket for receiving SSDP messages
@@ -477,7 +478,7 @@ sub startup {
 
 		my $file = $self->param("file");
 
-		if ($file =~ m/(\d+)/) {
+		if ($file =~ m/^(\d+)$/) {
 			my $id = $1;
 			my @item = ();
 			my $dbh = PDLNA::Database::connect();
@@ -507,9 +508,21 @@ sub startup {
 				'content_disposition' => 'inline',   # will change Content-Disposition from "attachment" to "inline"
 			);
 			PDLNA::Database::disconnect($dbh);
-
-			return;
 		}
+        else {
+            my $ent = b64_decode($file);
+
+            my $mime_type = mimetype($ent);
+
+            my @parts = split(/\./, $ent);
+
+			$self->app->types->type($parts[-1] => $mime_type);
+			$self->render_file(
+				'filepath' => $ent,
+				'format' => $parts[-1],
+				'content_disposition' => 'inline',   # will change Content-Disposition from "attachment" to "inline"
+			);
+        }
 	});
 
     $self->pdlna;

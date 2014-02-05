@@ -28,6 +28,8 @@ use IO::Select;
 use Net::Netmask;
 use Socket;
 use XML::Simple;
+use File::Basename qw();
+use Mojo::Util qw(b64_encode b64_decode);
 require bytes;
 no bytes;
 
@@ -570,38 +572,46 @@ sub ctrl_content_directory_1
 
 		$requested_count = 10 if $requested_count == 0; # if client asks for 0 items, we should return the 'default' amount (in our case 10)
 
-
 		if ($object_id =~ /^\d+$/)
 		{
 			PDLNA::Log::log('Received numeric Directory Listing request for: '.$object_id.'.', 2, 'httpdir');
 
-			#
-			# get the subdirectories for the object_id requested
-			#
-			my @dire_elements = ();
-			PDLNA::ContentLibrary::get_subdirectories_by_id($dbh, $object_id, $starting_index, $requested_count, \@dire_elements);
+### 			#
+### 			# get the subdirectories for the object_id requested
+### 			#
+### 			my @dire_elements = ();
+### 			PDLNA::ContentLibrary::get_subdirectories_by_id($dbh, $object_id, $starting_index, $requested_count, \@dire_elements);
+### 
+### 			#
+### 			# get the full amount of subdirectories for the object_id requested
+### 			#
+### 			my $amount_directories = PDLNA::ContentLibrary::get_amount_subdirectories_by_id($dbh, $object_id);
+### 
+### 			$requested_count = $requested_count - scalar(@dire_elements); # amount of @dire_elements is already in answer
+### 			if ($starting_index >= $amount_directories)
+### 			{
+### 				$starting_index = $starting_index - $amount_directories;
+### 			}
+### 
+### 			#
+### 			# get the files for the directory requested
+### 			#
+### 			my @file_elements = ();
+### 			PDLNA::ContentLibrary::get_subfiles_by_id($dbh, $object_id, $starting_index, $requested_count, \@file_elements);
+### 
+### 			#
+### 			# get the full amount of files in the directory requested
+### 			#
+### 			my $amount_files = PDLNA::ContentLibrary::get_amount_subfiles_by_id($dbh, $object_id);
 
-			#
-			# get the full amount of subdirectories for the object_id requested
-			#
-			my $amount_directories = PDLNA::ContentLibrary::get_amount_subdirectories_by_id($dbh, $object_id);
-
-			$requested_count = $requested_count - scalar(@dire_elements); # amount of @dire_elements is already in answer
-			if ($starting_index >= $amount_directories)
-			{
-				$starting_index = $starting_index - $amount_directories;
-			}
-
-			#
-			# get the files for the directory requested
-			#
-			my @file_elements = ();
-			PDLNA::ContentLibrary::get_subfiles_by_id($dbh, $object_id, $starting_index, $requested_count, \@file_elements);
-
-			#
-			# get the full amount of files in the directory requested
-			#
-			my $amount_files = PDLNA::ContentLibrary::get_amount_subfiles_by_id($dbh, $object_id);
+ 			my @dire_elements = ();
+ 			my @file_elements = ();
+            my $amount_directories = 0;
+            my $amount_files = 0;
+            foreach my $directory (@{$CONFIG{'DIRECTORIES'}}) {
+                ++$amount_directories;
+                push(@dire_elements, { NAME => File::Basename::basename($$directory{path}), ID => b64_encode($$directory{path}) });
+            }
 
 			#
 			# build the http response
@@ -700,6 +710,63 @@ sub ctrl_content_directory_1
 				});
 			}
 		}
+        else
+        {
+            my $directory = b64_decode($object_id);
+            my @dire_elements = ();
+            my @file_elements = ();
+
+            opendir(my $dh, $directory);
+            my @entries = sort readdir($dh);
+
+            my $amount_directories = 0;
+            my $amount_files = 0;
+
+            foreach my $ent (@entries) {
+                next if "." eq $ent;
+                next if ".." eq $ent;
+
+                if (-d "$directory/$ent") {
+                    ++$amount_directories;
+                    push(@dire_elements, { NAME => $ent, ID => b64_encode("$directory/$ent") }); #ID NAME SIZE DATA
+                }
+                elsif (-f "$directory/$ent") {
+                    my @stat = stat("$directory/$ent");
+                    my $time = scalar(localtime($stat[9]));
+
+                    ++$amount_files;
+                    push(@file_elements, { NAME => $ent, PARENT_ID => b64_encode($directory), ID => b64_encode("$directory/$ent"), SIZE => $stat[7], DATE => $time}); #ID NAME SIZE DATA
+                }
+            }
+            
+            closedir($dh);
+
+			#
+			# build the http response
+			#
+			$response_xml .= PDLNA::HTTPXML::get_browseresponse_header();
+
+			foreach my $directory (@dire_elements)
+			{
+				$response_xml .= PDLNA::HTTPXML::get_browseresponse_directory(
+					$directory->{ID},
+					$directory->{NAME},
+					\@browsefilters,
+					$dbh,
+				);
+			}
+
+			foreach my $file (@file_elements)
+			{
+				my $file_xml .= PDLNA::HTTPXML::get_browseresponse_item($file->{ID}, \@browsefilters, $dbh, $peer_ip_addr, $user_agent, $file->{PARENT_ID});
+                $response_xml .= $file_xml;
+			}
+
+			my $elements_in_listing = scalar(@dire_elements) + scalar(@file_elements);
+			my $elements_in_directory = $amount_directories + $amount_files;
+
+			$response_xml .= PDLNA::HTTPXML::get_browseresponse_footer($elements_in_listing, $elements_in_directory);
+        }
 	}
 	elsif ($action eq '"urn:schemas-upnp-org:service:ContentDirectory:1#GetSearchCapabilities"')
 	{

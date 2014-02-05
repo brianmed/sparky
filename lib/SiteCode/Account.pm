@@ -155,6 +155,9 @@ sub exists {
 sub check_password { 
     my $self = shift;
 
+    return(0) if !defined $_[0];
+    return(0) if !defined $_[1];
+
     my $hash = $self->hash_password($_[0], $_[1]);
 
     return($hash eq $_[1]);

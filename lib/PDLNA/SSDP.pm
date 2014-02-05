@@ -115,7 +115,7 @@ sub send_alive
 	my $self = shift;
 	my $amount = shift || 2;
 
-	PDLNA::Log::log('Sending SSDP alive NOTIFY messages.', 1, 'discovery');
+	PDLNA::Log::log('Sending SSDP alive NOTIFY messages.', 3, 'discovery');
 
 	for (1..$amount)
 	{
@@ -174,7 +174,7 @@ sub start_sending_periodic_alive_messages_thread
 {
 	my $self = shift;
 
-	PDLNA::Log::log('Starting thread for sending periodic SSDP alive messages.', 1, 'discovery');
+	PDLNA::Log::log('Starting sending periodic SSDP alive messages.', 1, 'discovery');
 	$self->send_periodic_alive_messages;
 }
 
@@ -196,7 +196,7 @@ sub start_listening_thread
 
 	state $handle = $self->{MULTICAST_LISTEN_SOCKET};
 
-	PDLNA::Log::log('Starting SSDP messages receiver thread.', 1, 'discovery');
+	PDLNA::Log::log('Starting to receive SSDP messages.', 1, 'discovery');
 
 	my $reactor = Mojo::IOLoop->singleton->reactor;
 	$reactor->io($handle =>

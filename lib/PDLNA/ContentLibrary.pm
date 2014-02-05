@@ -41,6 +41,8 @@ sub index_directories_thread
 		my $dbh = PDLNA::Database::connect();
 		$dbh->{AutoCommit} = 0;
 
+        PDLNA::Log::log("Indexing files: please wait", 1, 'library');
+
 		my $timestamp_start = time();
 		foreach my $directory (@{$CONFIG{'DIRECTORIES'}}) # we are not able to run this part in threads - since glob seems to be NOT thread safe
 		{
