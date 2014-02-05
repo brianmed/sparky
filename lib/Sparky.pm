@@ -174,7 +174,7 @@ sub version {
     my $self = shift;
     
     # === START version
-    return("2014-02-04.055");
+    return("2014-02-05.010");
     # === STOP version
 }
 
@@ -233,9 +233,9 @@ sub pdlna {
 
 	PDLNA::Database::initialize_db();
 
-	PDLNA::ContentLibrary::index_directories_thread;
+    PDLNA::ContentLibrary::index_directories_thread;
 	my $id = Mojo::IOLoop->recurring(3600 => sub {
-		PDLNA::ContentLibrary::index_directories_thread;
+            PDLNA::ContentLibrary::index_directories_thread;
 	});
 
 	$self->app->ssdp->add_send_socket(); # add the socket for sending SSDP messages
@@ -314,7 +314,7 @@ sub startup {
 
     $self->renderer->default_handler('tt');
 
-    $self->secret($$site_config{site_secret} || sprintf("%05d%05d%05d", int(rand(10000)), int(rand(10000)), int(rand(10000))));
+    $self->secrets([$$site_config{site_secret} || sprintf("%05d%05d%05d", int(rand(10000)), int(rand(10000)), int(rand(10000)))]);
 
     my $r = $self->routes;
 

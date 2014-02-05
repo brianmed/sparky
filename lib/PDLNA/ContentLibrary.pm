@@ -35,7 +35,7 @@ use PDLNA::Utils;
 
 sub index_directories_thread
 {
-	PDLNA::Log::log('Starting PDLNA::ContentLibrary::index_directories_thread().', 1, 'library');
+	PDLNA::Log::log('Starting PDLNA::ContentLibrary::index_directories_thread().', 3, 'library');
 ### 	while(1)
 ### 	{
 		my $dbh = PDLNA::Database::connect();
@@ -44,6 +44,7 @@ sub index_directories_thread
 		my $timestamp_start = time();
 		foreach my $directory (@{$CONFIG{'DIRECTORIES'}}) # we are not able to run this part in threads - since glob seems to be NOT thread safe
 		{
+            PDLNA::Log::log("Processsing directory: $$directory{path}", 1, 'library');
 			process_directory(
 				$dbh,
 				{
@@ -121,7 +122,7 @@ sub process_directory
 	$dbh->commit();
 
 	$$params{'path'} = PDLNA::Utils::escape_brackets($$params{'path'});
-	PDLNA::Log::log('Globbing directory: '.PDLNA::Utils::create_filesystem_path([ $$params{'path'}, '*', ]).'.', 2, 'library');
+	PDLNA::Log::log('Globbing directory: '.PDLNA::Utils::create_filesystem_path([ $$params{'path'}, '*', ]).'.', 3, 'library');
 	my @elements = bsd_glob(PDLNA::Utils::create_filesystem_path([ $$params{'path'}, '*', ]));
 	foreach my $element (sort @elements)
 	{
@@ -129,12 +130,12 @@ sub process_directory
 
 		if (-d "$element" && $element =~ /lost\+found$/)
 		{
-			PDLNA::Log::log('Skipping '.$element.' directory.', 2, 'library');
+			PDLNA::Log::log('Skipping '.$element.' directory.', 3, 'library');
 			next;
 		}
 		elsif (-d "$element") #  && $$params{'recursion'} eq 'yes' && !grep(/^\Q$element_basename\E$/, @{$$params{'exclude_dirs'}}))
 		{
-			PDLNA::Log::log('Processing directory '.$element.'.', 2, 'library');
+			PDLNA::Log::log('Processing directory '.$element.'.', 3, 'library');
 
 			process_directory(
 				$dbh,
@@ -156,7 +157,7 @@ sub process_directory
 
 			if (PDLNA::Media::is_supported_playlist($mime_type))
 			{
-				PDLNA::Log::log('Adding playlist '.$element.' as directory.', 2, 'library');
+				PDLNA::Log::log('Adding playlist '.$element.' as directory.', 3, 'library');
 
 				add_directory_to_db($dbh, $element, $$params{'rootdir'}, 1);
 
@@ -249,6 +250,7 @@ sub process_directory
 					if ($media_type eq 'video')
 					{
 						my $tmp = $1 if $element =~ /^(.+)\.\w{3,4}$/;
+                        $tmp //= "";
 						foreach my $extension ('srt')
 						{
 							if (-f $tmp.'.'.$extension)
@@ -273,12 +275,12 @@ sub process_directory
 			}
 			else
 			{
-				PDLNA::Log::log('Element '.$element.' skipped. Unsupported MimeType '.$mime_type.'.', 2, 'library');
+				PDLNA::Log::log('Element '.$element.' skipped. Unsupported MimeType '.$mime_type.'.', 3, 'library');
 			}
 		}
 		else
 		{
-			PDLNA::Log::log('Element '.$element.' skipped. Inlcuded in ExcludeList.', 2, 'library');
+			PDLNA::Log::log('Element '.$element.' skipped. Inlcuded in ExcludeList.', 3, 'library');
 		}
 	}
 }
@@ -311,7 +313,7 @@ sub add_directory_to_db
 				'parameters' => [ basename($path), $path, dirname($path), $rootdir, $type ],
 			},
 		);
-		PDLNA::Log::log('Added directory '.$path.' to ContentLibrary.', 2, 'library');
+		PDLNA::Log::log('Added directory '.$path.' to ContentLibrary.', 3, 'library');
 	}
 }
 
@@ -455,7 +457,7 @@ sub cleanup_contentlibrary
 {
 	my $dbh = shift;
 
-	PDLNA::Log::log('Started to remove non existant files.', 1, 'library');
+	PDLNA::Log::log('Started to remove non existant files.', 3, 'library');
 	my @files = ();
 	PDLNA::Database::select_db(
 		$dbh,
@@ -525,25 +527,25 @@ sub cleanup_contentlibrary
 		}
 	}
 
-### 	# delete not (any more) configured - directories from database
-### 	my @rootdirs = ();
-### 	get_subdirectories_by_id($dbh, 0, undef, undef, \@rootdirs);
-### 
-### 	my @conf_directories = ();
-### 	foreach my $directory (@{$CONFIG{'DIRECTORIES'}})
-### 	{
-### 		push(@conf_directories, $directory->{'path'});
-### 	}
-### 
-### 	foreach my $rootdir (@rootdirs)
-### 	{
-### 		unless (grep(/^$rootdir->{PATH}\/$/, @conf_directories))
-### 		{
-### 			PDLNA::Log::log("Removing $$rootdir{PATH}", 1, "library");
-### 			delete_subitems_recursively($dbh, $rootdir->{ID});
-### 		}
-### 	}
-### 
+	# delete not (any more) configured - directories from database
+	my @rootdirs = ();
+	get_subdirectories_by_id($dbh, 0, undef, undef, \@rootdirs);
+
+	my @conf_directories = ();
+	foreach my $directory (@{$CONFIG{'DIRECTORIES'}})
+	{
+		push(@conf_directories, $directory->{'path'});
+	}
+
+	foreach my $rootdir (@rootdirs)
+	{
+		unless (grep(/^$rootdir->{PATH}\/$/, @conf_directories))
+		{
+			PDLNA::Log::log("Removing $$rootdir{PATH}", 3, "library");
+			delete_subitems_recursively($dbh, $rootdir->{ID});
+		}
+	}
+
 ### 	# delete not (any more) configured - external from database
 ### 	my @externals = ();
 ### 	get_subfiles_by_id($dbh, 0, undef, undef, \@externals);
@@ -562,25 +564,25 @@ sub cleanup_contentlibrary
 ### 			delete_all_by_itemid($dbh, $external->{ID});
 ### 		}
 ### 	}
-
-	# delete external media items from database, if LOW_RESOURCE_MODE has been enabled
-	if ($CONFIG{'LOW_RESOURCE_MODE'} == 1)
-	{
-		my @externalfiles = ();
-		PDLNA::Database::select_db(
-			$dbh,
-			{
-				'query' => 'SELECT ID FROM FILES WHERE EXTERNAL = 1',
-				'parameters' => [ ],
-			},
-			\@externalfiles,
-		);
-
-		foreach my $externalfile (@externalfiles)
-		{
-			delete_all_by_itemid($dbh, $externalfile->{ID});
-		}
-	}
+### 
+### 	# delete external media items from database, if LOW_RESOURCE_MODE has been enabled
+### 	if ($CONFIG{'LOW_RESOURCE_MODE'} == 1)
+### 	{
+### 		my @externalfiles = ();
+### 		PDLNA::Database::select_db(
+### 			$dbh,
+### 			{
+### 				'query' => 'SELECT ID FROM FILES WHERE EXTERNAL = 1',
+### 				'parameters' => [ ],
+### 			},
+### 			\@externalfiles,
+### 		);
+### 
+### 		foreach my $externalfile (@externalfiles)
+### 		{
+### 			delete_all_by_itemid($dbh, $externalfile->{ID});
+### 		}
+### 	}
 
 	foreach my $directory (@{$CONFIG{'DIRECTORIES'}})
 	{
