@@ -147,6 +147,15 @@ sub parse_config
 			}
 		}
 	} else {
+		my @lines = `ifconfig`;
+		foreach (@lines) {
+			if (/inet\s+addr:(\d+.\d+.\d+.\d+)/) {
+                my $ip = $1;
+                next if $ip =~ m/^127/;
+				$CONFIG{'LOCAL_IPADDR'} = $ip;
+				last;
+			}
+		}
 	}
 
 	return 1;
