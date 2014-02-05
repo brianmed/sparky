@@ -14,7 +14,7 @@ tar -czf sparky.tgz includes
     --add "File::HomeDir" \
     --add "Crypt::Eksblowfish::Subkeyed" \
     --add "Compress::Zlib" \
-	--bind "entities.txt[file=lib/Mojo/entities.txt,extract]" \
+	--bind "entities.txt[file=/Users/bpm/Library/ActivePerl-5.16/lib/Mojo/entities.txt,extract]" \
 	--bind "sparky.tgz[file=sparky.tgz]" \
 	--lib lib \
 	--lib lib/Sparky \
@@ -22,6 +22,9 @@ tar -czf sparky.tgz includes
 	--force \
 	--clean \
 	--exe app/sparky-osx \
+	--add "arybase;arybase;IO::Handle;Class::MethodMaker::scalar;DBD::SQLite" \
+	--bind pDLNA.png[file=lib/PDLNA/pDLNA.png,mode=444] \
+	--bind globs[file=globs,text,mode=464] \
 	script/sparky
 
 \rm -f sparky.tgz
@@ -36,7 +39,7 @@ tar -czf sparky.tgz includes
     --add "File::HomeDir" \
     --add "Crypt::Eksblowfish::Subkeyed" \
     --add "Compress::Zlib" \
-	--bind "entities.txt[file=lib/Mojo/entities.txt,extract]" \
+	--bind "entities.txt[file=/Users/bpm/Library/ActivePerl-5.16/lib/Mojo/entities.txt,extract]" \
 	--bind "sparky.tgz[file=sparky.tgz]" \
 	--lib lib \
 	--lib lib/Sparky \
@@ -45,6 +48,9 @@ tar -czf sparky.tgz includes
 	--force \
 	--clean \
 	--exe app/sparky-win32.exe \
+	--add "arybase;arybase;IO::Handle;Class::MethodMaker::scalar;DBD::SQLite" \
+	--bind pDLNA.png[file=lib/PDLNA/pDLNA.png,mode=444] \
+	--bind globs[file=globs,text,mode=464] \
 	script/sparky
 
 rm ~/Downloads/spark/sparky-win32.exe 
@@ -62,7 +68,7 @@ tar -czf sparky.tgz includes
     --add "File::HomeDir::FreeDesktop" \
     --add "Crypt::Eksblowfish::Subkeyed" \
     --add "Compress::Zlib" \
-	--bind "entities.txt[file=lib/Mojo/entities.txt,extract]" \
+	--bind "entities.txt[file=/Users/bpm/Library/ActivePerl-5.16/lib/Mojo/entities.txt,extract]" \
 	--bind "sparky.tgz[file=sparky.tgz]" \
 	--lib lib \
 	--lib lib/Sparky \
@@ -71,6 +77,9 @@ tar -czf sparky.tgz includes
 	--force \
 	--clean \
 	--exe app/sparky-linux-x86-32 \
+	--add "arybase;arybase;IO::Handle;Class::MethodMaker::scalar;DBD::SQLite" \
+	--bind pDLNA.png[file=lib/PDLNA/pDLNA.png,mode=444] \
+	--bind globs[file=globs,text,mode=464] \
 	script/sparky
 
 /usr/local/PDK/bin/perlapp \
@@ -82,7 +91,7 @@ tar -czf sparky.tgz includes
     --add "File::HomeDir::FreeDesktop" \
     --add "Crypt::Eksblowfish::Subkeyed" \
     --add "Compress::Zlib" \
-	--bind "entities.txt[file=lib/Mojo/entities.txt,extract]" \
+	--bind "entities.txt[file=/Users/bpm/Library/ActivePerl-5.16/lib/Mojo/entities.txt,extract]" \
 	--bind "sparky.tgz[file=sparky.tgz]" \
 	--lib lib \
 	--lib lib/Sparky \
@@ -91,10 +100,10 @@ tar -czf sparky.tgz includes
 	--force \
 	--clean \
 	--exe app/sparky-linux-x86-64 \
+	--add "arybase;arybase;IO::Handle;Class::MethodMaker::scalar;DBD::SQLite" \
+	--bind pDLNA.png[file=lib/PDLNA/pDLNA.png,mode=444] \
+	--bind globs[file=globs,text,mode=464] \
 	script/sparky
-
-rm ~/Downloads/spark/sparky-win32.exe 
-cp -v app/sparky-win32.exe ~/Downloads/spark
 
 VER=$(/usr/local/ActivePerl-5.16/bin/perl -MPOSIX -ne 'if (/=== START/ .. /=== STOP/ and !/START|STOP/) { $r=qr/"(\d+-\d+-\d+)\.(\d+)"/; m/$r/; print("$1.$2\n");}' lib/Sparky.pm)
 VER="sparky-$VER"

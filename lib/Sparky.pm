@@ -12,6 +12,23 @@ use Mojo::Util;
 use Fcntl qw(:mode);
 use Cwd;
 use POSIX qw();
+use Date::Format;
+use GD;
+use IO::Select;
+use Net::Netmask;
+use Socket;
+use XML::Simple;
+
+use PDLNA::Config;
+use PDLNA::ContentLibrary;
+use PDLNA::Database;
+use PDLNA::Devices;
+use PDLNA::FFmpeg;
+use PDLNA::HTTPServer;
+use PDLNA::HTTPXML;
+use PDLNA::Log;
+use PDLNA::SpecificViews;
+use PDLNA::SSDP;
 
 sub setup_valid {
     my $self  = shift;
@@ -157,7 +174,7 @@ sub version {
     my $self = shift;
     
     # === START version
-    return("2014-01-29.111");
+    return("2014-02-04.053");
     # === STOP version
 }
 
@@ -191,6 +208,45 @@ sub forkcall {
     state $fc = Mojo::IOLoop::ForkCall->new;
 }
     
+sub ssdp {
+    my $self = shift;
+
+	state $ssdp = PDLNA::SSDP->new($self->app);
+}
+
+sub pdlna {
+	my $self = shift;
+
+	my $glob = PerlApp::extract_bound_file("globs");
+	push(@File::MimeInfo::DIRS, dirname($glob));
+
+	$self->app->log->level("debug");
+	$PDLNA::Log::app = $self->app;
+
+	my @config_file_error = ();
+	unless (PDLNA::Config::parse_config("./pdlna.conf", \@config_file_error))
+	{
+		PDLNA::Log::fatal(join("\n", @config_file_error))
+	}
+
+	PDLNA::Log::log("Starting $CONFIG{'PROGRAM_NAME'}/v".PDLNA::Config::print_version()." on $CONFIG{'OS'}/$CONFIG{'OS_VERSION'} with FriendlyName '$CONFIG{'FRIENDLY_NAME'}' with UUID $CONFIG{'UUID'}.", 0, 'default');
+
+	PDLNA::Database::initialize_db();
+
+	PDLNA::ContentLibrary::index_directories_thread;
+	my $id = Mojo::IOLoop->recurring(3600 => sub {
+		PDLNA::ContentLibrary::index_directories_thread;
+	});
+
+	$self->app->ssdp->add_send_socket(); # add the socket for sending SSDP messages
+	$self->app->ssdp->add_receive_socket(); # add the socket for receiving SSDP messages
+	$self->app->ssdp->send_byebye(2); # send some byebye messages
+	$self->app->ssdp->start_listening_thread($self->app); # start to listen for SEARCH messages in a thread
+	$self->app->ssdp->send_alive(6); # and now we are joing the group
+	$self->app->ssdp->start_sending_periodic_alive_messages_thread(); # start to send out periodic alive messages in a thread
+    
+    # my $ent = PerlApp::get_bound_file("entities.txt") || slurp(catfile(dirname(__FILE__), "entities.txt"));
+}
 
 sub startup {
     my $self = shift;
@@ -205,6 +261,8 @@ sub startup {
     $self->helper(uname => \&uname);
     $self->helper(is_admin => \&is_admin);
     $self->helper(forkcall => \&forkcall);
+    $self->helper(ssdp => \&ssdp);
+    $self->helper(pdlna => \&pdlna);
 
     warn("Version: " . $self->version, "\n");
     warn("Uname: " . $self->uname, "\n");
@@ -328,6 +386,133 @@ sub startup {
     $is_admin->get('/del/share/:whence/#b64_path')->to(controller => 'Dashboard', action => 'del_share');
 
     $is_admin->any('/add/user')->to(controller => 'Index', action => 'add_user');
+
+	$r->get('/ServerDesc.xml' => sub {
+		my $self = shift;
+
+		my $xml = PDLNA::HTTPXML::get_serverdescription($self->req->headers->user_agent);
+		$self->render(text => $xml, format => 'xml');
+	});
+
+	$r->get('/icons/:size/icon.:type' => sub {
+		my $self = shift;
+
+		my $size = $self->param("size");
+		my $type = $self->param("type");
+		PDLNA::Log::log('Delivering Logo in format '.$type.' and with '.$size.'x'.$size.' pixels.', 2, 'httpgeneric');
+
+		GD::Image->trueColor(1);
+		my $png = PerlApp::extract_bound_file("pDLNA.png");
+		my $image = GD::Image->new($png);
+		my $preview = GD::Image->new($size, $size);
+
+		# all black areas of the image should be transparent
+		my $black = $preview->colorAllocate(0,0,0);
+		$preview->transparent($black);
+
+		$preview->copyResampled($image, 0, 0, 0, 0, $size, $size, $image->width, $image->height);
+
+		$self->render(data => $preview->$type(), format => $type);
+	});
+
+	$r->get('/ContentDirectory1.xml' => sub {
+		my $self = shift;
+
+		my $xml = PDLNA::HTTPXML::get_contentdirectory();
+		$self->render(text => $xml, format => 'xml');
+	});
+
+	$r->get('/ConnectionManager1.xml' => sub {
+		my $self = shift;
+
+		my $xml = PDLNA::HTTPXML::get_connectionmanager();
+		$self->render(text => $xml, format => 'xml');
+	});
+
+	my $event = sub {
+		my $self = shift;
+
+		my $response_content = '';
+		if ("UNSUBSCRIBE" eq $self->req->method) {
+			$response_content = '<html><body><h1>200 OK</h1></body></html>';
+		}
+
+		$self->res->headers->add(SID => $CONFIG{UUID});
+		$self->res->headers->add(Timeout => "Second-$CONFIG{CACHE_CONTROL}");
+
+		$self->render(text => $response_content);
+	};
+
+	$r->any('/upnp/event/ContentDirectory1' => $event);
+	$r->any('/upnp/event/ConnectionManager1' => $event);
+
+	$r->post('/upnp/control/ContentDirectory1' => sub {
+		my $self = shift;
+
+		my $agent = $self->req->headers->user_agent;
+		my $peer_ip_addr = $self->tx->remote_address;
+
+		my $data = $self->req->body;
+
+		my $post_xml;
+		my $xmlsimple = XML::Simple->new();
+		eval { $post_xml = $xmlsimple->XMLin($data) };
+		if ($@)
+		{
+			PDLNA::Log::log('ERROR: Unable to convert POSTDATA with XML::Simple for '.$peer_ip_addr.': '.$@, 0, 'httpdir');
+		}
+		else
+		{
+			PDLNA::Log::log('Finished converting POSTDATA with XML::Simple for '.$peer_ip_addr.'.', 3, 'httpdir');
+		}
+
+		my $action = $self->req->headers->header('SOAPAction');
+		my $response = PDLNA::HTTPServer::ctrl_content_directory_1($post_xml, $action, $peer_ip_addr, $agent);
+
+		$self->render(text => $response, format => "xml");
+	});
+
+	$r->get('/media/:file' => sub {
+		my $self = shift;
+
+		my $file = $self->param("file");
+
+		if ($file =~ m/(\d+)/) {
+			my $id = $1;
+			my @item = ();
+			my $dbh = PDLNA::Database::connect();
+			PDLNA::Database::select_db(
+				$dbh,
+				{
+					'query' => 'SELECT NAME,FULLNAME,PATH,FILE_EXTENSION,SIZE,MIME_TYPE,TYPE,EXTERNAL FROM FILES WHERE ID = ?',
+					'parameters' => [ $id, ],
+				},
+				\@item,
+			);
+
+			my @iteminfo = ();
+			PDLNA::Database::select_db(
+				$dbh,
+				{
+					'query' => 'SELECT CONTAINER, AUDIO_CODEC, VIDEO_CODEC FROM FILEINFO WHERE FILEID_REF = ?;',
+					'parameters' => [ $id, ],
+				},
+				\@iteminfo,
+			);
+
+			$self->app->types->type($item[0]{FILE_EXTENSION} => $item[0]{MIME_TYPE});
+			$self->render_file(
+				'filepath' => $item[0]{FULLNAME},
+				'format' => $item[0]{FILE_EXTENSION},
+				'content_disposition' => 'inline',   # will change Content-Disposition from "attachment" to "inline"
+			);
+			PDLNA::Database::disconnect($dbh);
+
+			return;
+		}
+	});
+
+    $self->pdlna;
 }
 
 1;

@@ -12,7 +12,7 @@ use Mac::iTunes::Library::Item;
 use Mac::iTunes::Library::XML;
 use MP3::Info;
 use MP4::Info;
-use Mojo::IOLoop::ForkCall;
+# use Mojo::IOLoop::ForkCall;
 use File::Spec;
 
 sub browse {
