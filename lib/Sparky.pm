@@ -175,7 +175,7 @@ sub version {
     my $self = shift;
     
     # === START version
-    return("2014-02-05.066");
+    return("2014-02-05.074");
     # === STOP version
 }
 
@@ -308,9 +308,7 @@ sub startup {
     $ENV{MOJO_MAX_MESSAGE_SIZE} = 10485760;
 
     $self->plugin(tt_renderer => {template_options => {CACHE_SIZE => 0, COMPILE_EXT => undef, COMPILE_DIR => undef}});
-    if (-d "log") {
-        $self->plugin(AccessLog => {log => "log/access.log", format => '%h %l %u %t "%r" %>s %b %D "%{Referer}i" "%{User-Agent}i"'});
-    }
+    $self->plugin(AccessLog => {format => '%h %l %u %t "%r" %>s %b %D "%{Referer}i" "%{User-Agent}i"'});
     $self->plugin('RenderFile'); 
 
     $self->renderer->default_handler('tt');

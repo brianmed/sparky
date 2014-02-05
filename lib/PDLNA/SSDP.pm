@@ -156,7 +156,7 @@ sub send_announce
 
 	foreach my $st (@STS)
 	{
-		PDLNA::Log::log('Sending SSDP M-SEARCH response messages for '.$st.'.', 1, 'discovery');
+		PDLNA::Log::log('Sending SSDP M-SEARCH response messages for '.$st.'.', 3, 'discovery');
 		my $data = $self->ssdp_message({
 			'response' => 1,
 			'nts' => 'alive',
@@ -313,7 +313,7 @@ sub receive_messages
 			my $dbh = PDLNA::Database::connect();
 			if ($message{'NTS'} eq 'ssdp:alive' && defined($message{'NT'}))
 			{
-				PDLNA::Log::log('Adding UPnP device '.$message{'USN'}.' ('.$peer_ip_addr.') for '.$message{'NT'}.' to database.', 2, 'discovery');
+				PDLNA::Log::log('Adding UPnP device '.$message{'USN'}.' ('.$peer_ip_addr.') for '.$message{'NT'}.' to database.', 3, 'discovery');
 				PDLNA::Devices::add_device(
 					$dbh,
 					{
@@ -328,7 +328,7 @@ sub receive_messages
 			}
 			elsif ($message{'NTS'} eq 'ssdp:byebye' && defined($message{'NT'}))
 			{
-				PDLNA::Log::log('Deleting UPnP device '.$message{'USN'}.' ('.$peer_ip_addr.') for '.$message{'NT'}.' from database.', 2, 'discovery');
+				PDLNA::Log::log('Deleting UPnP device '.$message{'USN'}.' ('.$peer_ip_addr.') for '.$message{'NT'}.' from database.', 3, 'discovery');
 				PDLNA::Devices::delete_device(
 					$dbh,
 					{
@@ -344,7 +344,7 @@ sub receive_messages
 		{
 			if (defined($message{'MAN'}) && $message{'MAN'} eq '"ssdp:discover"')
 			{
-				PDLNA::Log::log('Received a SSDP M-SEARCH message by '.$peer_ip_addr.':'.$peer_src_port.' for a '.$message{'ST'}.' with an mx of '.$message{'MX'}.'.', 1, 'discovery');
+				PDLNA::Log::log('Received a SSDP M-SEARCH message by '.$peer_ip_addr.':'.$peer_src_port.' for a '.$message{'ST'}.' with an mx of '.$message{'MX'}.'.', 3, 'discovery');
 				# TODO start function in a thread - currently this is a blocking implementation
 				$self->send_announce($peer_ip_addr, $peer_src_port, $message{'ST'}, $message{'MX'});
 			}
