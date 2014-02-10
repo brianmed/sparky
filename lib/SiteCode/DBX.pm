@@ -29,8 +29,10 @@ sub _build_dbix {
     my $conn = DBIx::Connector->new($self->dbdsn, "", "", {
         RaiseError => 1,
         PrintError => 0,
-        AutoCommit => 1,
+        # AutoCommit => 1,
     });
+
+    $conn->dbh->sqlite_busy_timeout(60_000);
 
     my $sth = $conn->dbh->table_info('', 'main', 'account', 'TABLE');
     my $row = $sth->fetchrow_hashref;

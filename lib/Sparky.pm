@@ -175,7 +175,7 @@ sub version {
     my $self = shift;
     
     # === START version
-    return("2014-02-05.074");
+    return("2014-02-09.075");
     # === STOP version
 }
 
@@ -374,7 +374,9 @@ sub startup {
     $is_admin->get('/dashboard/browse')->to(controller => 'Dashboard', action => 'browse');
     $is_admin->get('/dashboard/browse/audio/:selection/:mode' => {mode => 'html'})->to(controller => 'Dashboard', action => 'audio');
     $is_admin->get('/dashboard/browse/video/:selection/:mode' => {mode => 'html'})->to(controller => 'Dashboard', action => 'video');
-    # $is_admin->get('/dashboard/browse/ogv/:selection/:mode' => {mode => 'html'})->to(controller => 'Dashboard', action => 'ogv');
+    $is_admin->get('/dashboard/browse/h264/:selection/:mode' => {mode => 'html'})->to(controller => 'Dashboard', action => 'h264');
+    $is_admin->get('/dashboard/browse/webm/:selection/:mode' => {mode => 'html'})->to(controller => 'Dashboard', action => 'webm');
+    $is_admin->get('/dashboard/browse/ogv/:selection/:mode' => {mode => 'html'})->to(controller => 'Dashboard', action => 'ogv');
     $is_admin->get('/dashboard/browse/:findme')->to(controller => 'Dashboard', action => 'findme');
 
     $is_admin->get('/dashboard/show')->to(controller => 'Dashboard', action => 'show');
@@ -465,8 +467,15 @@ sub startup {
 			PDLNA::Log::log('Finished converting POSTDATA with XML::Simple for '.$peer_ip_addr.'.', 3, 'httpdir');
 		}
 
+        use Mojo::Util qw(spurt steady_time);
+        my $time = steady_time;
+        spurt($self->dumper({ post_xml => $post_xml }), "/tmp/$time.post");
+        spurt($self->dumper({ body => $data }), "/tmp/$time.body");
+
 		my $action = $self->req->headers->header('SOAPAction');
 		my $response = PDLNA::HTTPServer::ctrl_content_directory_1($post_xml, $action, $peer_ip_addr, $agent);
+
+        spurt($response, "/tmp/$time.response");
 
 		$self->render(text => $response, format => "xml");
 	});

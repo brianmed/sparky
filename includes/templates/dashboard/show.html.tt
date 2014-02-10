@@ -139,7 +139,9 @@
                 <li data-icon=false><a href="#" onclick="addShare(0); return false;">Share</a></li>
                 <li data-icon=false><a href="#" onclick="addShare(1); return false;">One Hour Share</a></li>
                 <li data-icon=false><a href="#" onclick="addPath(this, '/audio'); return true;">HTML5 audio</a></li>
-                <!-- <li data-icon=false><a href="#" onclick="addPath(this, '/ogv'); return true;">OGG Transcode</a></li> -->
+                <li data-icon=false><a href="#" onclick="addPath(this, '/h264'); return true;">H264 Transcode</a></li>
+                <li data-icon=false><a href="#" onclick="addPath(this, '/webm'); return true;">WebM Transcode</a></li>
+                <li data-icon=false><a href="#" onclick="addPath(this, '/ogv'); return true;">OGG Transcode</a></li>
                 <li data-icon=false><a href="#" onclick="urlDialog(this); return true;">URL</a></li>
                 <li data-icon=false><a href="#" data-rel="back">Cancel</a></li>
             </ul>

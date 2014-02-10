@@ -157,7 +157,7 @@ sub audio {
             $title =~ s#.mp(3|4)##i;
         }
         $title =~ s#"#\\"#g;
-        push(@playlist, { title => $title, src => $src, ext => $ext });
+        push(@playlist, { title => $title, src => $src, ext => $ext, mime => "audio/$ext" });
     }
     $self->stash(playlist => \@playlist);
 

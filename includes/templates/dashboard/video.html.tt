@@ -3,7 +3,7 @@
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	<meta name="viewport" content="width=device-width">
-	<title>Audio</title>	
+	<title>Video</title>	
 	
     <script src="/jquery.js"></script>
 	<script src="/progression/build/mediaelement-and-player.min.js"></script><!-- Audio/Video Player jQuery -->
@@ -18,27 +18,21 @@
 
     <a id=backLink href="#" data-icon="back">Back</a>
     <br>&nbsp;<br>&nbsp;<br>
-[% IF playlist.size %]
-    <div class="progression-playlist-height responsive-wrapper responsive-audio" style="padding-bottom:174px;"><!-- Adjust padding-bottom as needed so the playlist doesn't cover content below -->
-    <audio class="progression-playlist progression-skin progression-minimal-light progression-audio-player" controls="controls" preload="none" autoplay>
-        [% FOREACH file IN playlist %]
-        <source src="[% file.src %]" type="[% file.mime %]" title="[% file.title | html%]"/>
-        [% END %]
-    </audio>
+    <div class="responsive-wrapper">
+    <video style="width: 100%; height: 100%;" class="progression-single progression-skin" controls="controls" preload="none">
+        <source src="[% src %]" type="video/[% ext %]"/>
+	</video>
     </div>
-[% ELSE %]
-    Nothing found to play.
-[% END %]
 
 <script>
-$('.progression-playlist').mediaelementplayer({
-	audioWidth: 400, // width of audio player
-	audioHeight:40, // height of audio player
-	startVolume: 0.5, // initial volume when the player starts
-    features: ['playlistfeature', 'playpause', 'current', 'progress', 'volume', 'playlist', 'tracks'],
-	playlist: true, //Playlist Show
-    playlistposition: 'bottom'
-	});
+
+// $('.progression-single').mediaelementplayer({
+// 	audioWidth: 400, // width of audio player
+// 	audioHeight:40, // height of audio player
+// 	startVolume: 0.5, // initial volume when the player starts
+// 	features: ['playpause','current','progress','duration','tracks','volume','fullscreen']
+// });
+    
 
 $("#backLink").click(function(event) {
     event.preventDefault();

@@ -12,7 +12,7 @@ use Mac::iTunes::Library::Item;
 use Mac::iTunes::Library::XML;
 use MP3::Info;
 use MP4::Info;
-# use Mojo::IOLoop::ForkCall;
+use Mojo::IOLoop::ForkCall;
 use File::Spec;
 
 sub browse {
@@ -22,6 +22,8 @@ sub browse {
         $self->redirect_to("/");
         return;
     }
+
+    my $user = SiteCode::Account->new(route => $self, username => $self->session->{have_user});
 
     my @paths = ();
 
@@ -57,7 +59,6 @@ sub browse {
         $$entry{ctime} = $$entry{ctime} ? scalar(localtime($$entry{ctime})) : "";
     }
 
-    my $user = SiteCode::Account->new(route => $self, username => $self->session->{have_user});
     $user->key("_t_entries", $self->dumper(\@entries));
     $self->flash("entry.name", "Browse");
 
@@ -130,7 +131,7 @@ sub findme {
         $user->key("_t_entries", undef);
         # }
 
-    $self->stash(cur_title => "Sparky: " . ($path ? $path : "Dashboard"));
+    $self->stash(cur_title => "Sparky");
 
     my $home;
     if ("darwin" eq $^O) {
@@ -173,7 +174,7 @@ sub show {
         $user->key("_t_entries", undef);
     }
 
-    $self->stash(cur_title => "Sparky: Dashboard");
+    $self->stash(cur_title => "Sparky");
 
     my $home;
     if ("darwin" eq $^O) {
@@ -468,7 +469,7 @@ sub audio {
             $title =~ s#.mp(3|4)##i;
         }
         $title =~ s#"#\\"#g;
-        push(@playlist, { title => $title, src => $src, ext => $ext });
+        push(@playlist, { title => $title, src => $src, ext => $ext, mime => "audio/$ext" });
     }
 
     $self->stash(playlist => \@playlist);
@@ -487,7 +488,9 @@ sub video {
     my $decoded = Mojo::Util::b64_decode($selection);
     
     if (-f $decoded) {
-        my $src = $self->url_for("/dashboard/browse/video/$selection/transcode")->to_abs;
+        my $src = $self->url_for("/dashboard/browse/$selection")->to_abs;
+        $decoded =~ m#\.(.*?)$#;
+        $self->stash(ext => $1);
         $self->stash(src => $src);
     }
 
@@ -564,6 +567,156 @@ sub video {
     $self->finish;
 }
 
+sub webm {
+    my $self = shift;
+
+    my $mode = $self->param("mode");
+    return unless $mode;
+
+    my $selection = $self->param("selection");
+    return unless $selection;
+    my $decoded = Mojo::Util::b64_decode($selection);
+
+    if (-f $decoded) {
+        my $src = $self->url_for("/dashboard/browse/webm/$selection/transcode?" . time)->to_abs;
+        $self->stash(src => $src);
+        $self->stash(ext => "webm");
+    }
+
+    if ("html" eq $mode) {
+        return $self->render("dashboard/video");
+    }
+
+    # transcode starting
+    my $bin = $self->ffmpeg_bin;
+
+    $self->render_later;
+
+    my $user = SiteCode::Account->new(route => $self, username => $self->session->{have_user});
+
+    Mojo::IOLoop->stream($self->tx->connection)->timeout(300);
+
+    my $pid;
+    my $id;
+
+    my $close = sub {
+        Mojo::IOLoop->remove($id);
+        $self->finish;
+        return;
+    };
+
+    $self->on(finish => sub { 
+        kill(9, $pid) if $pid;
+    });
+
+    my @cmd = ($bin, "-loglevel", "fatal", "-i", $decoded, "-acodec", "libvorbis", "-vcodec", "libvpx", "-y", "-f", "webm", "-");
+    $self->app->log->debug("cmd: ", join(" ", @cmd));
+
+    $pid = open(my $ffmpeg_fh, "-|", @cmd) or die("error: ffmpeg: $bin: $!");
+    binmode($ffmpeg_fh);
+    my $buf;
+
+    my $read;
+    $read = sub {
+        my $ret = read($ffmpeg_fh,$buf,32768);
+        if ($ret) {
+            $self->write_chunk($buf => $read);
+        }
+        else {
+            close($ffmpeg_fh);
+            $pid = undef;
+            $read = undef;
+            $self->finish;
+        }
+    };
+
+    $read->();
+}
+
+sub webm_206 {
+    my $self = shift;
+
+    my $mode = $self->param("mode");
+    return unless $mode;
+
+    my $selection = $self->param("selection");
+    return unless $selection;
+    my $decoded = Mojo::Util::b64_decode($selection);
+
+    $self->res->headers->accept_ranges('bytes');
+
+    if (-f $decoded) {
+        my $src = $self->url_for("/dashboard/browse/webm/$selection/transcode?" . time)->to_abs;
+        $self->stash(src => $src);
+        $self->stash(ext => "webm");
+    }
+
+    if ("html" eq $mode) {
+        return $self->render("dashboard/video");
+    }
+
+    # 2nd pass through
+    my $range = $self->req->headers->range;
+    if ($range) {
+        if ($range =~ m/^bytes=(\d+)?-(\d+)?/ && 0 != $1) {
+            my $start = $1;
+            my $end = $2;
+
+            my $user = SiteCode::Account->new(route => $self, username => $self->session->{have_user});
+            my $app = $self->app;
+            my $asset = Mojo::Asset::File->new(path => $user->key("_cache_webm_file"));
+            my $size = $asset->size;
+            $end //= ($size - 1);
+
+            $self->res->headers->content_type('video/webm');
+            $self->res->code(206)->headers->content_range("bytes $start-$end/*")
+                ->last_modified(Mojo::Date->new(time))
+                ->accept_ranges('bytes');
+
+            $self->res->content->asset($asset->start_range($start)->end_range($end));
+            return !!$self->rendered;
+        }
+    }
+
+    # transcode starting
+    my $bin = $self->ffmpeg_bin;
+
+    my $user = SiteCode::Account->new(route => $self, username => $self->session->{have_user});
+    my $webm = File::Temp->new(TEMPLATE => "transcode_XXXXX", UNLINK => 0, TMPDIR => 1);
+
+    $user->key("_cache_webm_file", "$webm");
+    
+    $self->forkcall->run(
+        sub {   
+            my @cmd = ($bin, "-i", $decoded, "-acodec", "libvorbis", "-vcodec", "libvpx", "-y", "-f", "webm", "$webm");
+
+            $self->app->log->debug("cmd: ", join(" ", @cmd));
+            system(@cmd);
+        }
+    );
+
+    my $id;
+
+    $self->app->log->debug("SLEEP");
+    select(undef, undef, undef, 3.75);
+    $self->app->log->debug("AFTER SLEEP");
+
+    $self->res->headers->content_type('video/webm');
+    $self->res->code(206);
+
+    my $app = $self->app;
+    my $asset = Mojo::Asset::File->new(path => "$webm");
+    my $size = $asset->size;
+    my $start = 0;
+    my $end = $size - 1;
+    $self->res->code(206)->headers->content_range("bytes $start-$end/*")
+        ->last_modified(Mojo::Date->new(time))
+        ->accept_ranges('bytes');
+
+    $self->res->content->asset($asset->start_range($start)->end_range($end));
+    return !!$self->rendered;
+}
+
 sub ogv {
     my $self = shift;
 
@@ -573,23 +726,212 @@ sub ogv {
     my $selection = $self->param("selection");
     return unless $selection;
     my $decoded = Mojo::Util::b64_decode($selection);
-    
+
     if (-f $decoded) {
-        $self->res->headers->content_type('video/ogg');
-        $self->render_later;
-
-        my $bin = $self->ffmpeg_bin;
-        my @cmd = ($bin, "-i", $decoded, "-strict", "-2", "-acodec", "libvorbis", "-vcodec", "libtheora", "-f", "ogg", "-");
-
-        open(my $ffmpeg_fh, "-|", @cmd) or die("error: ffmpeg: $bin: $!");
-        binmode($ffmpeg_fh);
-        my $buf;
-        while (0 != read($ffmpeg_fh,$buf,2048)) {
-            $self->write_chunk($buf);
-        }
-        close($ffmpeg_fh);
-        $self->finish;
+        my $src = $self->url_for("/dashboard/browse/ogv/$selection/transcode?" . time)->to_abs;
+        $self->stash(src => $src);
+        $self->stash(ext => "ogg");
     }
+
+    if ("html" eq $mode) {
+        return $self->render("dashboard/video");
+    }
+
+    # transcode starting
+    my $bin = $self->ffmpeg_bin;
+
+    $self->render_later;
+
+    my $user = SiteCode::Account->new(route => $self, username => $self->session->{have_user});
+
+    Mojo::IOLoop->stream($self->tx->connection)->timeout(300);
+
+    my $pid;
+    my $id;
+
+    my $close = sub {
+        Mojo::IOLoop->remove($id);
+        $self->finish;
+        return;
+    };
+
+    $self->on(finish => sub { 
+        kill(9, $pid) if $pid;
+    });
+
+    my @cmd = ($bin, "-loglevel", "fatal", "-i", $decoded, "-strict", "-2", "-acodec", "libvorbis", "-vcodec", "libtheora", "-y", "-f", "ogg", "-");
+    $self->app->log->debug("cmd: ", join(" ", @cmd));
+
+    $pid = open(my $ffmpeg_fh, "-|", @cmd) or die("error: ffmpeg: $bin: $!");
+    binmode($ffmpeg_fh);
+    my $buf;
+
+    my $read;
+    $read = sub {
+        my $ret = read($ffmpeg_fh,$buf,32768);
+        if ($ret) {
+            $self->write_chunk($buf => $read);
+        }
+        else {
+            close($ffmpeg_fh);
+            $pid = undef;
+            $read = undef;
+            $self->finish;
+        }
+    };
+
+    $read->();
+}
+
+sub ogv_old {
+    my $self = shift;
+
+    my $mode = $self->param("mode");
+    return unless $mode;
+
+    my $selection = $self->param("selection");
+    return unless $selection;
+    my $decoded = Mojo::Util::b64_decode($selection);
+
+    $self->res->headers->accept_ranges('bytes');
+
+    if (-f $decoded) {
+        my $src = $self->url_for("/dashboard/browse/ogv/$selection/transcode?" . time)->to_abs;
+        $self->stash(src => $src);
+        $self->stash(ext => "ogg");
+    }
+
+    if ("html" eq $mode) {
+        return $self->render("dashboard/video");
+    }
+
+    # 2nd pass through
+    my $range = $self->req->headers->range;
+    if ($range) {
+        if ($range =~ m/^bytes=(\d+)?-(\d+)?/ && 0 != $1) {
+            my $start = $1;
+            my $end = $2;
+
+            my $user = SiteCode::Account->new(route => $self, username => $self->session->{have_user});
+            my $app = $self->app;
+            my $asset = Mojo::Asset::File->new(path => $user->key("_cache_ogg_file"));
+            my $size = $asset->size;
+            $end //= ($size - 1);
+
+            $self->res->headers->content_type('video/ogg');
+            $self->res->code(206)->headers->content_range("bytes $start-$end/*")
+                ->last_modified(Mojo::Date->new(time))
+                ->accept_ranges('bytes');
+
+            $self->res->content->asset($asset->start_range($start)->end_range($end));
+            return !!$self->rendered;
+        }
+    }
+
+    # transcode starting
+    my $bin = $self->ffmpeg_bin;
+
+    my $user = SiteCode::Account->new(route => $self, username => $self->session->{have_user});
+    my $ogg = File::Temp->new(TEMPLATE => "transcode_XXXXX", UNLINK => 0, TMPDIR => 1);
+
+    $user->key("_cache_ogg_file", "$ogg");
+    
+    $self->forkcall->run(
+        sub {   
+            my @cmd = ($bin, "-i", $decoded, "-strict", "-2", "-acodec", "libvorbis", "-vcodec", "libtheora", "-y", "-f", "ogg", "$ogg");
+
+            $self->app->log->debug("cmd: ", join(" ", @cmd));
+            system(@cmd);
+        }
+    );
+
+    my $id;
+
+    $self->app->log->debug("SLEEP");
+    select(undef, undef, undef, 3.75);
+    $self->app->log->debug("AFTER SLEEP");
+
+    $self->res->headers->content_type('video/ogg');
+    $self->res->code(206);
+
+    my $app = $self->app;
+    my $asset = Mojo::Asset::File->new(path => "$ogg");
+    my $size = $asset->size;
+    my $start = 0;
+    my $end = $size - 1;
+    $self->res->code(206)->headers->content_range("bytes $start-$end/*")
+        ->last_modified(Mojo::Date->new(time))
+        ->accept_ranges('bytes');
+
+    $self->res->content->asset($asset->start_range($start)->end_range($end));
+    return !!$self->rendered;
+}
+
+sub h264 {
+    my $self = shift;
+
+    my $mode = $self->param("mode");
+    return unless $mode;
+
+    my $selection = $self->param("selection");
+    return unless $selection;
+    my $decoded = Mojo::Util::b64_decode($selection);
+
+    if (-f $decoded) {
+        my $src = $self->url_for("/dashboard/browse/h264/$selection/transcode?" . time)->to_abs;
+        $self->stash(src => $src);
+        $self->stash(ext => "mp4");
+    }
+
+    if ("html" eq $mode) {
+        return $self->render("dashboard/video");
+    }
+
+    # transcode starting
+    my $bin = $self->ffmpeg_bin;
+
+    $self->render_later;
+
+    my $user = SiteCode::Account->new(route => $self, username => $self->session->{have_user});
+
+    Mojo::IOLoop->stream($self->tx->connection)->timeout(300);
+
+    my $pid;
+    my $id;
+
+    my $close = sub {
+        Mojo::IOLoop->remove($id);
+        $self->finish;
+        return;
+    };
+
+    $self->on(finish => sub { 
+        kill(9, $pid) if $pid;
+    });
+
+    my @cmd = ($bin, "-loglevel", "info", "-i", $decoded, "-strict", "-2", "-acodec", "aac", "-vcodec", "libx264", "-f", "mp4", "-");
+    $self->app->log->debug("cmd: ", join(" ", @cmd));
+
+    $pid = open(my $ffmpeg_fh, "-|", @cmd) or die("error: ffmpeg: $bin: $!");
+    binmode($ffmpeg_fh);
+    my $buf;
+
+    my $read;
+    $read = sub {
+        my $ret = read($ffmpeg_fh,$buf,32768);
+        if ($ret) {
+            $self->app->log->debug("write_chunk");
+            $self->write_chunk($buf => $read);
+        }
+        else {
+            close($ffmpeg_fh);
+            $pid = undef;
+            $read = undef;
+            $self->finish;
+        }
+    };
+
+    $read->();
 }
 
 1;

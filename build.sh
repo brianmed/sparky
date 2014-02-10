@@ -3,8 +3,7 @@
 /usr/local/ActivePerl-5.16/bin/perl -MPOSIX -p -i -e '$t=POSIX::strftime("%Y-%m-%d", localtime); if (/=== START/ .. /=== STOP/ and !/START|STOP/) { $r=qr/"(\d+-\d+-\d+)\.(\d+)"/; m/$r/; $d=$1; $n=$2; $day{$d} = $n; $day{$t}++; $day{$t} = sprintf("%03d", $day{$t}); s/$r/"$t.$day{$t}"/; }' lib/Sparky.pm
 
 \rm -f sparky.tgz
-# tar -czf sparky.tgz includes ffmpeg/ffmpeg-osx
-tar -czf sparky.tgz includes
+tar -czf sparky.tgz includes ffmpeg/ffmpeg-osx
 
 /usr/local/PDK/bin/perlapp \
 	--add "Mojo::;Mojolicious::;Sparky::;B::Hooks::EndOfScope::" \
@@ -16,6 +15,15 @@ tar -czf sparky.tgz includes
     --add "Compress::Zlib" \
 	--bind "entities.txt[file=/Users/bpm/Library/ActivePerl-5.16/lib/Mojo/entities.txt,extract]" \
 	--bind "sparky.tgz[file=sparky.tgz]" \
+    --trim "B::Deparse" \
+    --trim "CGI" \
+    --trim "DBD::Pg" \
+    --trim "Date::Calc::PP" \
+    --trim "Math::BigFloat" \
+    --trim "Mozilla::CA" \
+    --trim "Mozilla::CA::*" \
+    --trim "SQL::Parser" \
+    --trim "SQL::Statement" \
 	--lib lib \
 	--lib lib/Sparky \
 	--norunlib \
@@ -28,8 +36,7 @@ tar -czf sparky.tgz includes
 	script/sparky
 
 \rm -f sparky.tgz
-# tar -czf sparky.tgz includes ffmpeg/ffmpeg-win32.exe
-tar -czf sparky.tgz includes
+tar -czf sparky.tgz includes ffmpeg/ffmpeg-win32.exe
 
 /usr/local/PDK/bin/perlapp \
 	--add "Mojo::;Mojolicious::;Sparky::;B::Hooks::EndOfScope::" \
@@ -41,6 +48,15 @@ tar -czf sparky.tgz includes
     --add "Compress::Zlib" \
 	--bind "entities.txt[file=/Users/bpm/Library/ActivePerl-5.16/lib/Mojo/entities.txt,extract]" \
 	--bind "sparky.tgz[file=sparky.tgz]" \
+    --trim "B::Deparse" \
+    --trim "CGI" \
+    --trim "DBD::Pg" \
+    --trim "Date::Calc::PP" \
+    --trim "Math::BigFloat" \
+    --trim "Mozilla::CA" \
+    --trim "Mozilla::CA::*" \
+    --trim "SQL::Parser" \
+    --trim "SQL::Statement" \
 	--lib lib \
 	--lib lib/Sparky \
 	--norunlib \
@@ -57,7 +73,7 @@ rm ~/Downloads/spark/sparky-win32.exe
 cp -v app/sparky-win32.exe ~/Downloads/spark
 
 \rm -f sparky.tgz
-tar -czf sparky.tgz includes
+tar -czf sparky.tgz includes ffmpeg/ffmpeg-linux32
 
 /usr/local/PDK/bin/perlapp \
 	--add "Mojo::;Mojolicious::;Sparky::;B::Hooks::EndOfScope::" \
@@ -70,6 +86,15 @@ tar -czf sparky.tgz includes
     --add "Compress::Zlib" \
 	--bind "entities.txt[file=/Users/bpm/Library/ActivePerl-5.16/lib/Mojo/entities.txt,extract]" \
 	--bind "sparky.tgz[file=sparky.tgz]" \
+    --trim "B::Deparse" \
+    --trim "CGI" \
+    --trim "DBD::Pg" \
+    --trim "Date::Calc::PP" \
+    --trim "Math::BigFloat" \
+    --trim "Mozilla::CA" \
+    --trim "Mozilla::CA::*" \
+    --trim "SQL::Parser" \
+    --trim "SQL::Statement" \
 	--lib lib \
 	--lib lib/Sparky \
 	--norunlib \
@@ -82,6 +107,9 @@ tar -czf sparky.tgz includes
 	--bind globs[file=globs,text,mode=464] \
 	script/sparky
 
+\rm -f sparky.tgz
+tar -czf sparky.tgz includes ffmpeg/ffmpeg-linux64
+
 /usr/local/PDK/bin/perlapp \
 	--add "Mojo::;Mojolicious::;Sparky::;B::Hooks::EndOfScope::" \
     --add "Sparky::Index" \
@@ -93,6 +121,15 @@ tar -czf sparky.tgz includes
     --add "Compress::Zlib" \
 	--bind "entities.txt[file=/Users/bpm/Library/ActivePerl-5.16/lib/Mojo/entities.txt,extract]" \
 	--bind "sparky.tgz[file=sparky.tgz]" \
+    --trim "B::Deparse" \
+    --trim "CGI" \
+    --trim "DBD::Pg" \
+    --trim "Date::Calc::PP" \
+    --trim "Math::BigFloat" \
+    --trim "Mozilla::CA" \
+    --trim "Mozilla::CA::*" \
+    --trim "SQL::Parser" \
+    --trim "SQL::Statement" \
 	--lib lib \
 	--lib lib/Sparky \
 	--norunlib \
@@ -110,26 +147,46 @@ VER="sparky-$VER"
 
 cd app
 mkdir "$VER"
-cd "$VER"
 
+cd "$VER"
 cp ../INSTALL .
 cp ../INSTALL.txt .
-cp ../sparky-linux-x86-32 .
-cp ../sparky-linux-x86-64 .
-cp ../sparky-osx .
-cp ../sparky-win32.exe .
-
+cp ../LICENSE .
 cd ..
-rm sparky.zip
-zip sparky.zip "$VER"/*
+
+cd "$VER"
+cp ../sparky-osx .
+cd ..
+rm sparky-osx.zip
+zip sparky-osx.zip "$VER"/*
+
+cd "$VER"
+rm ./sparky-osx
+cp ../sparky-win32.exe .
+cd ..
+rm sparky-win32.zip
+zip sparky-win32.zip "$VER"/*
+
+cd "$VER"
+rm ./sparky-win32.exe
+cp ../sparky-linux-x86-32 .
+cd ..
+rm sparky-linux32.zip
+zip sparky-linux32.zip "$VER"/*
+
+cd "$VER"
+rm ./sparky-linux-x86-32
+cp ../sparky-linux-x86-64 .
+cd ..
+rm sparky-linux64.zip
+zip sparky-linux64.zip "$VER"/*
 
 cd "$VER"
 rm ./INSTALL
 rm ./INSTALL.txt
-rm ./sparky-linux-x86-32
+rm ./LICENSE
 rm ./sparky-linux-x86-64
-rm ./sparky-osx
-rm ./sparky-win32.exe
 
 cd ..
 rmdir "$VER"
+date

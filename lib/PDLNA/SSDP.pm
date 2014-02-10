@@ -204,7 +204,7 @@ sub start_listening_thread
 			my $reactor = shift;
 
             # $app->log->debug("RECV DLNA Message");
-			receive_messages($self);
+			receive_messages($self, $app);
 		}
 	)->watch($handle, 1, 0);
 }
@@ -213,6 +213,7 @@ sub parse_ssdp_message
 {
 	my $input_data = shift;
 	my $output_data = shift;
+    my $app = shift;
 
 	my @lines = split('\n', $input_data);
 	for (my $i = 0; $i < @lines; $i++)
@@ -231,6 +232,10 @@ sub parse_ssdp_message
 	}
 	else
 	{
+        use Mojo::Util qw(spurt steady_time);
+        my $time = steady_time;
+        spurt($app->dumper({ input_data => $input_data }), "/tmp/$time.input_data");
+
 		return 0;
 	}
 
@@ -242,6 +247,10 @@ sub parse_ssdp_message
 		}
 		else
 		{
+            use Mojo::Util qw(spurt steady_time);
+            my $time = steady_time;
+            spurt($app->dumper({ input_data => $input_data }), "/tmp/$time.input_data");
+
 			return 0;
 		}
 	}
@@ -270,6 +279,7 @@ sub parse_ssdp_message
 sub receive_messages
 {
 	my $self = shift;
+    my $app = shift;
 
 		my $data = undef;
 
@@ -295,7 +305,7 @@ sub receive_messages
 		}
 
 		my %message = ();
-		unless(parse_ssdp_message($data, \%message))
+		unless(parse_ssdp_message($data, \%message, $app))
 		{
 			PDLNA::Log::log('ERROR: Unable to parse SSDP message from client IP '.$peer_ip_addr.'. Ignoring message.', 0, 'discovery');
 			return;

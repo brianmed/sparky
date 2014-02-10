@@ -82,35 +82,31 @@ sub key
     my $dbx = $self->dbx;
 
     if (scalar(@_)) {
+        $dbx->dbh->begin_work;
         if (defined $_[0]) {
             my $value = shift;
             my $defined = $self->key($key);
 
-            if ($defined) {
+            if (defined $defined) {
                 my $id = $dbx->col("SELECT id FROM account_key WHERE account_id = ? AND account_key = ?", undef, $self->id(), $key);
                 $dbx->do("UPDATE account_value SET account_value = ? WHERE account_key_id = ?", undef, $value, $id);
-
-                # $dbx->dbh->commit;
             }
             else {
                 $dbx->do("INSERT INTO account_key (account_id, account_key) VALUES (?, ?)", undef, $self->id(), $key);
                 my $id = $dbx->col("SELECT id FROM account_key WHERE account_id = ? AND account_key = ?", undef, $self->id(), $key);
                 $dbx->do("INSERT INTO account_value (account_key_id, account_value) VALUES (?, ?)", undef, $id, $value);
-
-                # $dbx->dbh->commit;
             }
         }
         else {
             my $defined = $self->key($key);
 
-            if ($defined) {
+            if (defined $defined) {
                 my $id = $dbx->col("SELECT id FROM account_key WHERE account_id = ? AND account_key = ?", undef, $self->id(), $key);
                 $dbx->do("DELETE FROM account_value where account_key_id = ?", undef, $id);
                 $dbx->do("DELETE FROM account_key where id = ?", undef, $id);
-
-                # $dbx->dbh->commit;
             }
         }
+        $dbx->dbh->commit;
     }
 
     my $row = $dbx->row(qq(

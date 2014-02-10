@@ -2,5 +2,5 @@ sparky-linux-x86-32
 sparky-linux-x86-64
 sparky-osx
 sparky-win32.exe
-sparky.db
-sparky.zip
+*.db
+*.zip

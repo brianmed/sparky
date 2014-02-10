@@ -748,6 +748,7 @@ sub ctrl_content_directory_1
 
 			foreach my $directory (@dire_elements)
 			{
+                $$directory{ID} =~ s#\s##g;
 				$response_xml .= PDLNA::HTTPXML::get_browseresponse_directory(
 					$directory->{ID},
 					$directory->{NAME},
@@ -758,6 +759,8 @@ sub ctrl_content_directory_1
 
 			foreach my $file (@file_elements)
 			{
+                $$file{ID} =~ s#\s##g;
+                $$file{PARENT_ID} =~ s#\s##g;
 				my $file_xml .= PDLNA::HTTPXML::get_browseresponse_item($file->{ID}, \@browsefilters, $dbh, $peer_ip_addr, $user_agent, $file->{PARENT_ID});
                 $response_xml .= $file_xml;
 			}
