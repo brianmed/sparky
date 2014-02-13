@@ -175,7 +175,7 @@ sub version {
     my $self = shift;
     
     # === START version
-    return("2014-02-09.075");
+    return("2014-02-12.078");
     # === STOP version
 }
 
@@ -374,9 +374,10 @@ sub startup {
     $is_admin->get('/dashboard/browse')->to(controller => 'Dashboard', action => 'browse');
     $is_admin->get('/dashboard/browse/audio/:selection/:mode' => {mode => 'html'})->to(controller => 'Dashboard', action => 'audio');
     $is_admin->get('/dashboard/browse/video/:selection/:mode' => {mode => 'html'})->to(controller => 'Dashboard', action => 'video');
-    $is_admin->get('/dashboard/browse/h264/:selection/:mode' => {mode => 'html'})->to(controller => 'Dashboard', action => 'h264');
-    $is_admin->get('/dashboard/browse/webm/:selection/:mode' => {mode => 'html'})->to(controller => 'Dashboard', action => 'webm');
-    $is_admin->get('/dashboard/browse/ogv/:selection/:mode' => {mode => 'html'})->to(controller => 'Dashboard', action => 'ogv');
+    $is_admin->get('/dashboard/browse/h264/:selection/#mode' => {mode => 'html'})->to(controller => 'Dashboard', action => 'h264');
+    $is_admin->get('/dashboard/browse/h264/:selection/ts/#file')->to(controller => 'Dashboard', action => 'h264_render');
+    $is_admin->get('/dashboard/browse/webm/:selection/#mode' => {mode => 'html'})->to(controller => 'Dashboard', action => 'webm');
+    $is_admin->get('/dashboard/browse/ogv/:selection/#mode' => {mode => 'html'})->to(controller => 'Dashboard', action => 'ogv');
     $is_admin->get('/dashboard/browse/:findme')->to(controller => 'Dashboard', action => 'findme');
 
     $is_admin->get('/dashboard/show')->to(controller => 'Dashboard', action => 'show');

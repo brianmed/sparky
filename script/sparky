@@ -19,7 +19,18 @@ BEGIN {
     }
 };
 
+BEGIN {
+    return unless defined $PerlApp::VERSION;
+
+    my $expire = "2014-04-01";
+    my($y,$m,$d) = (localtime)[5,4,3];
+    my $today = sprintf("%04d-%02d-%02d", $y+1900,$m+1,$d);
+    return if $today le $expire;
+    print "This beta has expired.\nPlease download again at: http://filebeagle.com\n";
+
+    exit;
+}
+
 # Start command line interface for application
 require Mojolicious::Commands;
 Mojolicious::Commands->start_app('Sparky');
-

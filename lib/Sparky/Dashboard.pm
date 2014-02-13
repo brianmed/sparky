@@ -14,6 +14,10 @@ use MP3::Info;
 use MP4::Info;
 use Mojo::IOLoop::ForkCall;
 use File::Spec;
+use File::Temp;
+use Mojo::Util qw(slurp);
+use POSIX ":sys_wait_h";
+use File::Spec;
 
 sub browse {
     my $self = shift;
@@ -76,6 +80,8 @@ sub findme {
         $self->redirect_to("/");
         return;
     }
+
+    $self->session->{_ffmpeg_m3u8} = 0;
 
     my $host = $self->req->url->to_abs->host;
     my $port = $self->req->url->to_abs->port;
@@ -488,83 +494,18 @@ sub video {
     my $decoded = Mojo::Util::b64_decode($selection);
     
     if (-f $decoded) {
-        my $src = $self->url_for("/dashboard/browse/$selection")->to_abs;
-        $decoded =~ m#\.(.*?)$#;
-        $self->stash(ext => $1);
-        $self->stash(src => $src);
+        my $webm = $self->url_for("/dashboard/browse/webm/$selection/transcode.webm?" . time)->to_abs;
+        my $ogg = $self->url_for("/dashboard/browse/ogv/$selection/transcode.ogg?" . time)->to_abs;
+        my $m3u8 = $self->url_for("/dashboard/browse/h264/$selection/transcode.m3u8?" . time)->to_abs;
+
+        $self->stash(webm => $webm);
+        $self->stash(ogg => $ogg);
+        $self->stash(m3u8 => $m3u8);
     }
 
     if ("html" eq $mode) {
         return $self->render("dashboard/video");
     }
-
-    # transcode
-    # ./ffmpeg/ffmpeg-osx -i movie.avi -acodec libmp3lame -vcodec libx264
-    my $bin = $self->ffmpeg_bin;
-    # my @cmd = ($bin, "-i", $decoded, "-acodec", "libmp3lame", "-vcodec", "libx264", "-f", "m4v", "-");
-
-###     my $tmp = File::Spec->tmpdir();
-###     mkdir("$tmp/sparky") unless -d "$tmp/sparky";
-###     mkdir("$tmp/sparky/transcode") unless -d "$tmp/sparky/transcode";
-###     my $dir = $self->stash->{_dir} = "$tmp/sparky/transcode";
-### 
-###     opendir(my $dh, $dir) or die("error: opendir: $dir: $!");
-###     my @files = grep { /stream/ && -f "$dir/$_" } readdir($dh);
-###     foreach my $file (@files) {
-###         unlink("$dir/$file");
-###     }
-###     closedir($dh);
-### 
-###     $self->forkcall->run(
-###         sub {   
-###             my $dir = $self->stash->{_dir};
-###             my @cmd = ($bin);
-###             push(@cmd, "-i", $decoded, "-async", "1", "-ss", "00:00:05", "-strict", "-2", "-acodec", "aac");
-###             push(@cmd, "-b:v", "3000k", "-ac", "2", "-vcodec", "libx264", "-preset", "superfast", "-tune", "zerolatency", "-threads", "2", "-s", "1280x720");
-###             push(@cmd, "-flags", "-global_header", "-map", "0:0", "-map", "0:1", "-f", "segment", "-segment_time", "10", "-segment_list", "$dir/stream.m3u8");
-###             push(@cmd, "-segment_format", "mpegts", "-segment_wrap", "10", "-segment_list_size", "6", "-segment_list_flags", "live", "$dir/stream%03d.ts");
-### 
-###             warn(join(" ", @cmd));
-###             open(my $fh, "-|", @cmd) or die("error: open: ffmepg: $bin: $!");
-###             while(<$fh>) {
-###                 warn($_);
-###             }
-###             close($fh);
-###             my @cmd = ($bin, "-i", $decoded, "-acodec", "libmp3lame", "-vcodec", "libx264", "-f", "m4v", "-");
-###         },
-###         sub { 
-###             my ($fc, $err, $ret) = @_;
-### 
-###             $self->stash->{_dir} = undef;
-###         },
-###         
-###     );
-### 
-###     foreach my $i (1 .. 10) {
-###         my $dir = $self->stash->{_dir};
-###         last if -f "$dir/stream.m3u8";
-###         sleep 2;
-###     }
-### 
-###     if (-f "$dir/stream.m3u8") {
-###         $self->app->types->type(mpeg => 'video/MP2T');
-###         $self->render_file('filepath' => "$dir/stream.m3u8");
-###     }
-###     else {
-###         $self->render(text => "No stream created.\n");
-###     }
-
-    $self->res->headers->content_type('video/ogg');
-    # my @cmd = ($bin, "-i", $decoded, "-acodec", "libmp3lame", "-vcodec", "libx264", "-f", "m4v", "-");
-    my @cmd = ($bin, "-i", $decoded, "-strict", "-2", "-acodec", "libvorbis", "-vcodec", "libtheora", "-f", "ogg", "-");
-    open(my $ffmpeg_fh, "-|", @cmd) or die("error: ffmpeg: $bin: $!");
-    binmode($ffmpeg_fh);
-    my $buf;
-    while (0 != read($ffmpeg_fh,$buf,2048)) {
-        $self->write_chunk($buf);
-    }
-    close($ffmpeg_fh);
-    $self->finish;
 }
 
 sub webm {
@@ -609,10 +550,11 @@ sub webm {
         kill(9, $pid) if $pid;
     });
 
-    my @cmd = ($bin, "-loglevel", "fatal", "-i", $decoded, "-acodec", "libvorbis", "-vcodec", "libvpx", "-y", "-f", "webm", "-");
-    $self->app->log->debug("cmd: ", join(" ", @cmd));
+    my @cmd = ($bin, "-re", "-loglevel", "error", "-i", $decoded, "-acodec", "libvorbis", "-vcodec", "libvpx", "-y", "-f", "webm", "-");
+    # $self->app->log->debug("cmd: ", join(" ", @cmd));
 
-    $pid = open(my $ffmpeg_fh, "-|", @cmd) or die("error: ffmpeg: $bin: $!");
+    my $cmd = join(" ", @cmd);
+    $pid = open(my $ffmpeg_fh, "$cmd |") or die("error: ffmpeg: $bin: $!");
     binmode($ffmpeg_fh);
     my $buf;
 
@@ -631,90 +573,6 @@ sub webm {
     };
 
     $read->();
-}
-
-sub webm_206 {
-    my $self = shift;
-
-    my $mode = $self->param("mode");
-    return unless $mode;
-
-    my $selection = $self->param("selection");
-    return unless $selection;
-    my $decoded = Mojo::Util::b64_decode($selection);
-
-    $self->res->headers->accept_ranges('bytes');
-
-    if (-f $decoded) {
-        my $src = $self->url_for("/dashboard/browse/webm/$selection/transcode?" . time)->to_abs;
-        $self->stash(src => $src);
-        $self->stash(ext => "webm");
-    }
-
-    if ("html" eq $mode) {
-        return $self->render("dashboard/video");
-    }
-
-    # 2nd pass through
-    my $range = $self->req->headers->range;
-    if ($range) {
-        if ($range =~ m/^bytes=(\d+)?-(\d+)?/ && 0 != $1) {
-            my $start = $1;
-            my $end = $2;
-
-            my $user = SiteCode::Account->new(route => $self, username => $self->session->{have_user});
-            my $app = $self->app;
-            my $asset = Mojo::Asset::File->new(path => $user->key("_cache_webm_file"));
-            my $size = $asset->size;
-            $end //= ($size - 1);
-
-            $self->res->headers->content_type('video/webm');
-            $self->res->code(206)->headers->content_range("bytes $start-$end/*")
-                ->last_modified(Mojo::Date->new(time))
-                ->accept_ranges('bytes');
-
-            $self->res->content->asset($asset->start_range($start)->end_range($end));
-            return !!$self->rendered;
-        }
-    }
-
-    # transcode starting
-    my $bin = $self->ffmpeg_bin;
-
-    my $user = SiteCode::Account->new(route => $self, username => $self->session->{have_user});
-    my $webm = File::Temp->new(TEMPLATE => "transcode_XXXXX", UNLINK => 0, TMPDIR => 1);
-
-    $user->key("_cache_webm_file", "$webm");
-    
-    $self->forkcall->run(
-        sub {   
-            my @cmd = ($bin, "-i", $decoded, "-acodec", "libvorbis", "-vcodec", "libvpx", "-y", "-f", "webm", "$webm");
-
-            $self->app->log->debug("cmd: ", join(" ", @cmd));
-            system(@cmd);
-        }
-    );
-
-    my $id;
-
-    $self->app->log->debug("SLEEP");
-    select(undef, undef, undef, 3.75);
-    $self->app->log->debug("AFTER SLEEP");
-
-    $self->res->headers->content_type('video/webm');
-    $self->res->code(206);
-
-    my $app = $self->app;
-    my $asset = Mojo::Asset::File->new(path => "$webm");
-    my $size = $asset->size;
-    my $start = 0;
-    my $end = $size - 1;
-    $self->res->code(206)->headers->content_range("bytes $start-$end/*")
-        ->last_modified(Mojo::Date->new(time))
-        ->accept_ranges('bytes');
-
-    $self->res->content->asset($asset->start_range($start)->end_range($end));
-    return !!$self->rendered;
 }
 
 sub ogv {
@@ -759,10 +617,11 @@ sub ogv {
         kill(9, $pid) if $pid;
     });
 
-    my @cmd = ($bin, "-loglevel", "fatal", "-i", $decoded, "-strict", "-2", "-acodec", "libvorbis", "-vcodec", "libtheora", "-y", "-f", "ogg", "-");
-    $self->app->log->debug("cmd: ", join(" ", @cmd));
+    my @cmd = ($bin, "-re", "-loglevel", "error", "-i", $decoded, "-strict", "-2", "-acodec", "libvorbis", "-vcodec", "libtheora", "-y", "-f", "ogg", "-");
+    # $self->app->log->debug("cmd: ", join(" ", @cmd));
 
-    $pid = open(my $ffmpeg_fh, "-|", @cmd) or die("error: ffmpeg: $bin: $!");
+    my $cmd = join(" ", @cmd);
+    $pid = open(my $ffmpeg_fh, "$cmd |") or die("error: ffmpeg: $bin: $!");
     binmode($ffmpeg_fh);
     my $buf;
 
@@ -783,93 +642,15 @@ sub ogv {
     $read->();
 }
 
-sub ogv_old {
-    my $self = shift;
-
-    my $mode = $self->param("mode");
-    return unless $mode;
-
-    my $selection = $self->param("selection");
-    return unless $selection;
-    my $decoded = Mojo::Util::b64_decode($selection);
-
-    $self->res->headers->accept_ranges('bytes');
-
-    if (-f $decoded) {
-        my $src = $self->url_for("/dashboard/browse/ogv/$selection/transcode?" . time)->to_abs;
-        $self->stash(src => $src);
-        $self->stash(ext => "ogg");
-    }
-
-    if ("html" eq $mode) {
-        return $self->render("dashboard/video");
-    }
-
-    # 2nd pass through
-    my $range = $self->req->headers->range;
-    if ($range) {
-        if ($range =~ m/^bytes=(\d+)?-(\d+)?/ && 0 != $1) {
-            my $start = $1;
-            my $end = $2;
-
-            my $user = SiteCode::Account->new(route => $self, username => $self->session->{have_user});
-            my $app = $self->app;
-            my $asset = Mojo::Asset::File->new(path => $user->key("_cache_ogg_file"));
-            my $size = $asset->size;
-            $end //= ($size - 1);
-
-            $self->res->headers->content_type('video/ogg');
-            $self->res->code(206)->headers->content_range("bytes $start-$end/*")
-                ->last_modified(Mojo::Date->new(time))
-                ->accept_ranges('bytes');
-
-            $self->res->content->asset($asset->start_range($start)->end_range($end));
-            return !!$self->rendered;
-        }
-    }
-
-    # transcode starting
-    my $bin = $self->ffmpeg_bin;
-
-    my $user = SiteCode::Account->new(route => $self, username => $self->session->{have_user});
-    my $ogg = File::Temp->new(TEMPLATE => "transcode_XXXXX", UNLINK => 0, TMPDIR => 1);
-
-    $user->key("_cache_ogg_file", "$ogg");
-    
-    $self->forkcall->run(
-        sub {   
-            my @cmd = ($bin, "-i", $decoded, "-strict", "-2", "-acodec", "libvorbis", "-vcodec", "libtheora", "-y", "-f", "ogg", "$ogg");
-
-            $self->app->log->debug("cmd: ", join(" ", @cmd));
-            system(@cmd);
-        }
-    );
-
-    my $id;
-
-    $self->app->log->debug("SLEEP");
-    select(undef, undef, undef, 3.75);
-    $self->app->log->debug("AFTER SLEEP");
-
-    $self->res->headers->content_type('video/ogg');
-    $self->res->code(206);
-
-    my $app = $self->app;
-    my $asset = Mojo::Asset::File->new(path => "$ogg");
-    my $size = $asset->size;
-    my $start = 0;
-    my $end = $size - 1;
-    $self->res->code(206)->headers->content_range("bytes $start-$end/*")
-        ->last_modified(Mojo::Date->new(time))
-        ->accept_ranges('bytes');
-
-    $self->res->content->asset($asset->start_range($start)->end_range($end));
-    return !!$self->rendered;
-}
-
 sub h264 {
     my $self = shift;
 
+    $self->h264_m3u8;
+}
+
+sub h264_m3u8 {
+    my $self = shift;
+
     my $mode = $self->param("mode");
     return unless $mode;
 
@@ -877,20 +658,35 @@ sub h264 {
     return unless $selection;
     my $decoded = Mojo::Util::b64_decode($selection);
 
+    $self->app->types->type(m3u8 => 'application/x-mpegURL');
+    $self->app->types->type(ts => 'video/MP2T');
+
     if (-f $decoded) {
-        my $src = $self->url_for("/dashboard/browse/h264/$selection/transcode?" . time)->to_abs;
+        my $src = $self->url_for("/dashboard/browse/h264/$selection/transcode.m3u8?" . time)->to_abs;
+        # $self->app->log->debug("src: $src");
         $self->stash(src => $src);
-        $self->stash(ext => "mp4");
     }
 
     if ("html" eq $mode) {
         return $self->render("dashboard/video");
     }
 
+    my $ffmpeg_m3u8 = $self->session->{_ffmpeg_m3u8};
+    if ($ffmpeg_m3u8) {
+        my $newdir = $self->session->{m3u8_dir};
+        my $buf = slurp(File::Spec->catfile($newdir, "mobile.m3u8")) if -f File::Spec->catfile($newdir, "mobile.m3u8");
+        $buf //= "";
+        
+        my $ts = $self->url_for("/dashboard/browse/h264/$selection/ts")->to_abs;
+        $buf =~ s#^(out\d+.ts)$#$ts/$1#msg;
+
+        # $self->app->log->debug($buf);
+
+        return $self->render(text => $buf);
+    }
+
     # transcode starting
     my $bin = $self->ffmpeg_bin;
-
-    $self->render_later;
 
     my $user = SiteCode::Account->new(route => $self, username => $self->session->{have_user});
 
@@ -899,39 +695,56 @@ sub h264 {
     my $pid;
     my $id;
 
-    my $close = sub {
-        Mojo::IOLoop->remove($id);
-        $self->finish;
-        return;
-    };
+    my $newdir = $self->stash->{_newdir} = File::Temp->newdir(CLEANUP => 0);
 
-    $self->on(finish => sub { 
-        kill(9, $pid) if $pid;
-    });
+    $self->session->{m3u8_dir} = $newdir;
 
-    my @cmd = ($bin, "-loglevel", "info", "-i", $decoded, "-strict", "-2", "-acodec", "aac", "-vcodec", "libx264", "-f", "mp4", "-");
-    $self->app->log->debug("cmd: ", join(" ", @cmd));
+    my @cmd = ($bin, "-loglevel", "error", "-i", "$decoded", "-strict", "-2", "-acodec", "aac", "-vcodec", "libx264", "-vprofile", "baseline", "-level", "3.0", "-flags", "-global_header", "-map", "0", "-f", "segment", "-segment_list", File::Spec->catfile($newdir, "mobile.m3u8"), "-segment_list_flags", "+live", "-segment_time", "10", "out%07d.ts");
+        
+    # $self->app->log->debug("cmd: ", join(" ", @cmd));
+    my $cmd = join(" ", @cmd);
 
-    $pid = open(my $ffmpeg_fh, "-|", @cmd) or die("error: ffmpeg: $bin: $!");
-    binmode($ffmpeg_fh);
     my $buf;
 
-    my $read;
-    $read = sub {
-        my $ret = read($ffmpeg_fh,$buf,32768);
-        if ($ret) {
-            $self->app->log->debug("write_chunk");
-            $self->write_chunk($buf => $read);
-        }
-        else {
-            close($ffmpeg_fh);
-            $pid = undef;
-            $read = undef;
-            $self->finish;
-        }
-    };
+    my ($stdin, $stdout, $stderr);
+    my $cwd = getcwd;
+    chdir($newdir) or die("error: chdir: $newdir: $!");
+    if ($^O eq "MSWin32") {
+        system(1, @cmd);
+    }
+    else {
+        system("$cmd &");
+    }
+    chdir($cwd) or die("error: chdir: $cwd: $!");
 
-    $read->();
+    $self->session->{_ffmpeg_m3u8} = 1;
+
+    foreach (1 .. 30) {
+        last if stat(File::Spec->catfile($newdir, "mobile.m3u8"));
+        sleep(1);
+    }
+    sleep(2);
+
+    $buf = slurp(File::Spec->catfile($newdir, "mobile.m3u8")) if -f File::Spec->catfile($newdir, "mobile.m3u8");
+    $buf //= "";
+    
+    my $ts = $self->url_for("/dashboard/browse/h264/$selection/ts")->to_abs;
+    $buf =~ s#^(out\d+.ts)$#$ts/$1#msg;
+
+    # $self->app->log->debug("buf: $buf: " . File::Spec->catfile($newdir, "mobile.m3u8") . "\n");
+    $self->res->headers->content_type('application/x-mpegurl');
+    $self->render(text => $buf);
+}
+
+sub h264_render {
+    my $self = shift;
+
+    $self->app->types->type(ts => 'video/MP2T');
+
+    my $dir = $self->session->{m3u8_dir} // "";
+    my $file = $self->param("file");
+
+    $self->render_file('filepath' => "$dir/$file");
 }
 
 1;

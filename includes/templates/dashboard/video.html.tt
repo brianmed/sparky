@@ -1,44 +1,43 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
 <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<meta name="viewport" content="width=device-width">
-	<title>Video</title>	
-	
-    <script src="/jquery.js"></script>
-	<script src="/progression/build/mediaelement-and-player.min.js"></script><!-- Audio/Video Player jQuery -->
-	<script src="/progression/build/mep-feature-playlist.js"></script><!-- Playlist JavaSCript -->
-	
-	<link rel="stylesheet" href="/progression/css/progression-player.css" /><!-- Default Player Styles -->
-	<link href="/progression/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css" /><!-- Player Icons -->
 
-    <link rel="stylesheet" href="/progression/css/skin-minimal-light.css" /><!-- Minimal Light Skin -->
+   <!-- player skin -->
+   <link rel="stylesheet" type="text/css" href="/flow/skin/minimalist.css">
+
+   <!-- site specific styling -->
+   <style type="text/css">
+   body { font: 12px "Myriad Pro", "Lucida Grande", sans-serif; text-align: center; padding-top: 5%; }
+   .flowplayer { width: 80%; }
+   </style>
+
+   <!-- flowplayer depends on jQuery 1.7.1+ (for now) -->
+   <script type="text/javascript" src="/jquery.js"></script>
+
+   <!-- include flowplayer -->
+   <script type="text/javascript" src="/flow/flowplayer.min.js"></script>
+
 </head>
-<body id="progression-player-preview">
 
-    <a id=backLink href="#" data-icon="back">Back</a>
+<body>
+
+    <h2><a id=backLink href="#" data-icon="back" style="text-align:left;">Back</a></h2>
     <br>&nbsp;<br>&nbsp;<br>
-    <div class="responsive-wrapper">
-    <video style="width: 100%; height: 100%;" class="progression-single progression-skin" controls="controls" preload="none">
-        <source src="[% src %]" type="video/[% ext %]"/>
-	</video>
-    </div>
 
-<script>
+   <!-- the player -->
+   <div class="flowplayer" data-swf="flowplayer.swf" data-ratio="0.4167">
+        <video controls="controls" preload="none">
+            <source type="application/x-mpegurl" src="[% m3u8 %]" />
+            <source type="video/webm" src="[% webm %]" />
+            <source type="video/ogg" src="[% ogg %]" />
+        </video>
+   </div>
 
-// $('.progression-single').mediaelementplayer({
-// 	audioWidth: 400, // width of audio player
-// 	audioHeight:40, // height of audio player
-// 	startVolume: 0.5, // initial volume when the player starts
-// 	features: ['playpause','current','progress','duration','tracks','volume','fullscreen']
-// });
-    
-
-$("#backLink").click(function(event) {
-    event.preventDefault();
-    history.back(1);
-});
-</script>
+    <script>
+        $("#backLink").click(function(event) {
+            event.preventDefault();
+            history.back(1);
+        });
+    </script>
 
 </body>
 </html>
