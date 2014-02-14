@@ -37,8 +37,11 @@ use Net::IP;
 use Net::Netmask;
 use Sys::Hostname qw(hostname);
 use File::HomeDir qw();
+use File::Spec;
 
 use PDLNA::Media;
+
+my $tmpdir = File::Spec->tmpdir();
 
 our %CONFIG = (
 	# values which can be modified by configuration file
@@ -47,7 +50,7 @@ our %CONFIG = (
 	'LISTEN_INTERFACE' => undef,
 	'HTTP_PORT' => 8080,
 	'CACHE_CONTROL' => 1800,
-	'PIDFILE' => ($ENV{TEMP} || $ENV{TMP} || $ENV{TMPDIR}) . "/pdlna.pid",
+	'PIDFILE' => File::Spec->catfile($tmpdir, "pdlna.pid"),
 	'ALLOWED_CLIENTS' => [],
 	'DB_TYPE' => 'SQLITE3',
 	'DB_NAME' => 'pdlna.db',
@@ -65,7 +68,7 @@ our %CONFIG = (
 	'ENABLE_GENERAL_STATISTICS' => 0,
 	'RESCAN_MEDIA' => 86400,
 	'UUID' => 'Version4',
-	'TMP_DIR' => $ENV{TEMP} || $ENV{TMP} || $ENV{TMPDIR},
+	'TMP_DIR' => $tmpdir,
 	'IMAGE_THUMBNAILS' => 0,
 	'VIDEO_THUMBNAILS' => 0,
 	'LOW_RESOURCE_MODE' => 0,

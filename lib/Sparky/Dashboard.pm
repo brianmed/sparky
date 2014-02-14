@@ -81,7 +81,26 @@ sub findme {
         return;
     }
 
+    my $_ffmpeg_m3u8 = $self->session->{_ffmpeg_m3u8};
+    my $newdir = $self->session->{m3u8_dir};
+
     $self->session->{_ffmpeg_m3u8} = 0;
+    $self->session->{m3u8_dir} = "";
+
+    if ($newdir && -d $newdir) {
+        opendir(my $dh, $newdir);
+
+        my @files = readdir($dh);
+        foreach my $file (@files) {
+            if ($file =~ m#^(mobile.m3u8|out\d+.ts)$#) {
+                unlink(File::Spec->catfile($newdir, $file));
+            }
+        }
+
+        closedir($dh);
+
+        rmdir($newdir);
+    }
 
     my $host = $self->req->url->to_abs->host;
     my $port = $self->req->url->to_abs->port;
@@ -492,6 +511,26 @@ sub video {
     my $selection = $self->param("selection");
     return unless $selection;
     my $decoded = Mojo::Util::b64_decode($selection);
+
+    my $_ffmpeg_m3u8 = $self->session->{_ffmpeg_m3u8};
+    my $newdir = $self->session->{m3u8_dir};
+    $self->session->{_ffmpeg_m3u8} = 0;
+    $self->session->{m3u8_dir} = "";
+
+    if ($newdir && -d $newdir) {
+        opendir(my $dh, $newdir);
+
+        my @files = readdir($dh);
+        foreach my $file (@files) {
+            if ($file =~ m#^(mobile.m3u8|out\d+.ts)$#) {
+                unlink(File::Spec->catfile($newdir, $file));
+            }
+        }
+
+        closedir($dh);
+
+        rmdir($newdir);
+    }
     
     if (-f $decoded) {
         my $webm = $self->url_for("/dashboard/browse/webm/$selection/transcode.webm?" . time)->to_abs;

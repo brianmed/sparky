@@ -175,7 +175,7 @@ sub version {
     my $self = shift;
     
     # === START version
-    return("2014-02-12.078");
+    return("2014-02-13.018");
     # === STOP version
 }
 
@@ -286,6 +286,15 @@ sub startup {
             $ffmpeg_bin = "$dirname/ffmpeg/ffmpeg-win32.exe";
         }
         elsif ("linux" eq $^O) {
+            my $proc = `/bin/uname -p`;
+            chomp($proc);
+
+            if ($proc =~ m/64/) {
+                $ffmpeg_bin = "$dirname/ffmpeg/ffmpeg-linux64";
+            }
+            else {
+                $ffmpeg_bin = "$dirname/ffmpeg/ffmpeg-linux32";
+            }
         }
 
         $tar->setcwd($dirname);
@@ -308,7 +317,7 @@ sub startup {
     $ENV{MOJO_MAX_MESSAGE_SIZE} = 10485760;
 
     $self->plugin(tt_renderer => {template_options => {CACHE_SIZE => 0, COMPILE_EXT => undef, COMPILE_DIR => undef}});
-    $self->plugin(AccessLog => {format => '%h %l %u %t "%r" %>s %b %D "%{Referer}i" "%{User-Agent}i"'});
+    # $self->plugin(AccessLog => {format => '%h %l %u %t "%r" %>s %b %D "%{Referer}i" "%{User-Agent}i"'});
     $self->plugin('RenderFile'); 
 
     $self->renderer->default_handler('tt');
