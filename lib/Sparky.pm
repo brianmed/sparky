@@ -218,8 +218,10 @@ sub ssdp {
 sub pdlna {
 	my $self = shift;
 
-	my $glob = PerlApp::extract_bound_file("globs");
-	push(@File::MimeInfo::DIRS, dirname($glob));
+    if ($PerlApp::VERSION) {
+        my $glob = PerlApp::extract_bound_file("globs");
+        push(@File::MimeInfo::DIRS, dirname($glob));
+    }
 
 	$self->app->log->level("debug");
 	$PDLNA::Log::app = $self->app;
@@ -305,6 +307,26 @@ sub startup {
         push(@{$self->static->paths}, "$dirname/includes/public");
     }
     else {
+        my $dirname = ".";
+
+        if ("darwin" eq $^O) {
+            $ffmpeg_bin = "$dirname/ffmpeg/ffmpeg-osx";
+        }
+        elsif ("MSWin32" eq $^O) {
+            $ffmpeg_bin = "$dirname/ffmpeg/ffmpeg-win32.exe";
+        }
+        elsif ("linux" eq $^O) {
+            my $proc = `/bin/uname -p`;
+            chomp($proc);
+
+            if ($proc =~ m/64/) {
+                $ffmpeg_bin = "$dirname/ffmpeg/ffmpeg-linux64";
+            }
+            else {
+                $ffmpeg_bin = "$dirname/ffmpeg/ffmpeg-linux32";
+            }
+        }
+
         push(@{$self->renderer->paths}, "includes/templates");
         push(@{$self->static->paths}, "includes/public");
     }

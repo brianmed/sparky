@@ -96,7 +96,6 @@ sub send_byebye
 	{
 		foreach my $nt (@{$self->{NTS}})
 		{
-			$DB::single = 1;
 			$self->{MULTICAST_SEND_SOCKET}->send(
 				$self->ssdp_message({
 					'notify' => 1,

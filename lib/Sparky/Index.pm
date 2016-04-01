@@ -44,9 +44,10 @@ sub init {
     my $v = $self->setup_valid([qw(login password _password)]);
     return $self->render unless $v->has_data;
 
-    my @names = $v->param;
+    my @names = @{ $self->req->params->names };
     my %params;
     foreach my $name (@names) {
+        next unless $v->param($name);
         $params{$name} = $v->param($name);
         $self->stash($name, $v->param($name));
     }
@@ -80,9 +81,10 @@ sub login {
     my $v = $self->setup_valid([qw(login password)]);
     return $self->render unless $v->has_data;
 
-    my @names = $v->param;
+    my @names = @{ $self->req->params->names };
     my %params;
     foreach my $name (@names) {
+        next unless $v->param($name);
         $params{$name} = $v->param($name);
         $self->stash($name, $v->param($name));
     }
@@ -152,9 +154,10 @@ sub add_user {
     my $v = $self->setup_valid([qw(login password _password)]);
     return $self->render unless $v->has_data;
 
-    my @names = $v->param;
+    my @names = @{ $self->req->params->names };
     my %params;
     foreach my $name (@names) {
+        next unless $v->param($name);
         $params{$name} = $v->param($name);
         $self->stash($name, $v->param($name));
     }
